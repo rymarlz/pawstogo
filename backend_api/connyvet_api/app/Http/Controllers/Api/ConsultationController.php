@@ -528,7 +528,6 @@ class ConsultationController extends Controller
     <td style="width:55%; vertical-align:top;">
   <div style="display:inline-block; vertical-align:top;">
     ' . $logoHtml . '
-    <div class="brand-name">Pawstogo</div>
     <div class="brand-sub">Consultas veterinarias · Atención clínica</div>
   </div>
 </td>
@@ -657,24 +656,36 @@ class ConsultationController extends Controller
      */
     public function uploadAttachments(Request $request, Consultation $consultation)
     {
+        logger()->info('UPLOAD DEBUG', [
+            'content_type' => $request->header('content-type'),
+            'has_files' => $request->hasFile('files'),
+            'files_keys' => array_keys($request->allFiles() ?? []),
+            'files_type' => gettype($request->file('files')),
+            'files_count' => is_array($request->file('files')) ? count($request->file('files')) : null,
+            'raw_keys' => array_keys($request->all() ?? []),
+            'all_input_keys' => array_keys($request->all()),
+            'request_method' => $request->method(),
+            'request_all' => $request->all(),
+        ]);
 
-
-	 logger()->info('UPLOAD DEBUG', [
-	        'content_type' => $request->header('content-type'),
-	        'has_files' => $request->hasFile('files'),
-	        'files_keys' => array_keys($request->allFiles() ?? []),
-	        'files_type' => gettype($request->file('files')),
-	        'files_count' => is_array($request->file('files')) ? count($request->file('files')) : null,
-	        'raw_keys' => array_keys($request->all() ?? []),
-	    ]);
         $userId = optional($request->user())->id;
 
-        $request->validate([
-            'files'   => ['required', 'array', 'min:1'],
-            'files.*' => ['file', 'max:10240'], // 10MB por archivo (ajusta)
-            'notes'   => ['nullable', 'array'],
-            'notes.*' => ['nullable', 'string', 'max:191'],
-        ]);
+        try {
+            $validated = $request->validate([
+                'files'   => ['required', 'array', 'min:1'],
+                'files.*' => ['file', 'max:10240'], // 10MB por archivo (ajusta)
+                'notes'   => ['nullable', 'array'],
+                'notes.*' => ['nullable', 'string', 'max:191'],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            logger()->error('VALIDATION ERROR', [
+                'errors' => $e->errors(),
+                'message' => $e->getMessage(),
+                'request_data' => $request->all(),
+                'request_files' => $request->allFiles(),
+            ]);
+            throw $e;
+        }
 
         $files = $request->file('files', []);
         $notes = $request->input('notes', []);
