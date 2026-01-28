@@ -656,7 +656,7 @@ class ConsultationController extends Controller
      */
     public function uploadAttachments(Request $request, Consultation $consultation)
     {
-        logger()->info('UPLOAD DEBUG', [
+        logger()->error('UPLOAD DEBUG', [
             'content_type' => $request->header('content-type'),
             'has_files' => $request->hasFile('files'),
             'files_keys' => array_keys($request->allFiles() ?? []),
