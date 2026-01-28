@@ -4,6 +4,8 @@ export type ApiFetchOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   token?: string | null;
   data?: any; // JSON body
+  body?: any; // Alias para data (compatibilidad)
+  params?: Record<string, any>; // Query parameters
   headers?: Record<string, string>;
   signal?: AbortSignal;
 };
@@ -37,9 +39,22 @@ async function parseJsonSafe(res: Response) {
  * Para FormData usa fetch directo sin Content-Type.
  */
 export async function apiFetch<T = any>(path: string, opts: ApiFetchOptions = {}): Promise<T> {
-  const { method = 'GET', token, data, headers = {}, signal } = opts;
+  const { method = 'GET', token, data, body, params, headers = {}, signal } = opts;
 
-  const url = joinUrl(API_BASE_URL, path);
+  // Construir URL con query parameters si existen
+  let url = joinUrl(API_BASE_URL, path);
+  if (params && Object.keys(params).length > 0) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        searchParams.append(key, String(value));
+      }
+    });
+    url += `?${searchParams.toString()}`;
+  }
+
+  // Usar body si está definido, sino data
+  const requestBody = body !== undefined ? body : data;
 
   const finalHeaders: Record<string, string> = {
     Accept: 'application/json',
@@ -48,13 +63,13 @@ export async function apiFetch<T = any>(path: string, opts: ApiFetchOptions = {}
 
   if (token) finalHeaders.Authorization = `Bearer ${token}`;
 
-  let body: BodyInit | undefined;
-  if (data !== undefined) {
+  let fetchBody: BodyInit | undefined;
+  if (requestBody !== undefined) {
     finalHeaders['Content-Type'] = 'application/json';
-    body = JSON.stringify(data);
+    fetchBody = JSON.stringify(requestBody);
   }
 
-  const res = await fetch(url, { method, headers: finalHeaders, body, signal });
+  const res = await fetch(url, { method, headers: finalHeaders, body: fetchBody, signal });
   const json = await parseJsonSafe(res);
 
   if (!res.ok) throw json;
