@@ -1,0 +1,69 @@
+# Archivos de entorno
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Vendor (Composer)
+vendor/
+**/vendor/
+
+# Build files
+dist/
+build/
+**/dist/
+**/build/
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Laravel específico
+/storage/*.key
+/storage/pail
+/public/storage
+/public/hot
+/public/build
+/bootstrap/cache/*
+!bootstrap/cache/.gitignore
+
+# Archivos temporales y backups
+*.zip
+*.bak
+*.sql
+*.sqlite
+*.sqlite3
+
+# Archivos de configuración local
+Homestead.json
+Homestead.yaml
+auth.json
+
+# Archivos de sistema
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Archivos de SSH (si los hay accidentalmente)
+*.pub
+eval*
