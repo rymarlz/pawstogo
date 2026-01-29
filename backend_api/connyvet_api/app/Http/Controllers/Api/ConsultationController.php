@@ -159,7 +159,7 @@ class ConsultationController extends Controller
             'temperature_c'        => ['nullable', 'numeric', 'min:1', 'max:45'],
             'heart_rate'           => ['nullable', 'integer', 'min:0', 'max:400'],
             'respiratory_rate'     => ['nullable', 'integer', 'min:0', 'max:300'],
-            'body_condition_score' => ['nullable', 'integer', 'min:1', 'max:9'],
+            'body_condition_score' => ['nullable', 'integer', 'min:1', 'max:30'],
 
             'next_control_date' => ['nullable', 'date'],
 
@@ -266,7 +266,7 @@ class ConsultationController extends Controller
             'temperature_c'        => ['nullable', 'numeric', 'min:20', 'max:45'],
             'heart_rate'           => ['nullable', 'integer', 'min:0', 'max:400'],
             'respiratory_rate'     => ['nullable', 'integer', 'min:0', 'max:300'],
-            'body_condition_score' => ['nullable', 'integer', 'min:1', 'max:9'],
+            'body_condition_score' => ['nullable', 'integer', 'min:1', 'max:30'],
 
             'next_control_date' => ['nullable', 'date'],
 
