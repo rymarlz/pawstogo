@@ -149,12 +149,20 @@ export async function uploadConsultationAttachments(
   // ✅ URL ABSOLUTA: evita que quede pegado a /dashboard o a otro host
   const url = joinUrl(API_BASE_URL, `/consultations/${consultationId}/attachments`);
 
+  // DEBUG: Verificar FormData antes de enviar
+  console.log('[uploadConsultationAttachments] FormData entries:');
+  for (const [key, value] of fd.entries()) {
+    console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
+  }
+  console.log('[uploadConsultationAttachments] Sending to:', url);
+  console.log('[uploadConsultationAttachments] Body is FormData:', fd instanceof FormData);
+
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       Accept: 'application/json',
       Authorization: `Bearer ${token}`,
-      // ❌ NO Content-Type
+      // ❌ NO Content-Type - el navegador lo establece automáticamente con boundary
     },
     body: fd,
   });
