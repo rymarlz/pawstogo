@@ -73,15 +73,16 @@ export function DashboardPage() {
   // === Estado: citas de hoy ===
   const [todayConsultations, setTodayConsultations] = useState<Consultation[]>([]);
   const [todayCount, setTodayCount] = useState<number | null>(null);
-  const [loadingToday, setLoadingToday] = useState(false);
   const [todayError, setTodayError] = useState<string | null>(null);
 
   // === Estado: vacunas (próximas y vencidas) ===
   const [upcomingVaccines, setUpcomingVaccines] = useState<VaccineApplication[]>([]);
   const [upcomingTotal, setUpcomingTotal] = useState<number | null>(null);
   const [overdueTotal, setOverdueTotal] = useState<number | null>(null);
-  const [loadingVaccines, setLoadingVaccines] = useState(false);
   const [vaccinesError, setVaccinesError] = useState<string | null>(null);
+
+  // Carga única del dashboard (consultas + vacunas en paralelo)
+  const [loadingDashboard, setLoadingDashboard] = useState(false);
 
   const userName = user?.name || 'Profesional';
   const isAdmin = (user?.role ?? '') === 'admin';
@@ -151,14 +152,15 @@ export function DashboardPage() {
     return base;
   }, [isAdmin]);
 
-  // ===== Efecto: cargar consultas de hoy =====
+  // ===== Un solo efecto: cargar consultas de hoy y vacunas en paralelo =====
   useEffect(() => {
-    async function loadToday() {
-      if (!token) return;
+    if (!token) return;
 
-      setLoadingToday(true);
-      setTodayError(null);
+    setLoadingDashboard(true);
+    setTodayError(null);
+    setVaccinesError(null);
 
+    async function loadToday(): Promise<void> {
       try {
         const todayIso = getTodayIso();
         const filters: ConsultationFilters = {
@@ -168,31 +170,17 @@ export function DashboardPage() {
           page: 1,
           per_page: 5,
         };
-
-        const res = (await fetchConsultations(token, filters)) as ConsultationsPaginatedResponse<Consultation>;
+        const res = (await fetchConsultations(token!, filters)) as ConsultationsPaginatedResponse<Consultation>;
         const data = Array.isArray(res.data) ? res.data : [];
-
         setTodayConsultations(data);
         setTodayCount(res.meta?.total ?? data.length);
-      } catch (err: any) {
-        console.error('Error cargando consultas de hoy:', err);
-        setTodayError(err?.message || 'No se pudieron cargar las citas de hoy.');
-      } finally {
-        setLoadingToday(false);
+      } catch (err: unknown) {
+        const msg = err && typeof err === 'object' && 'message' in err ? String((err as { message?: string }).message) : 'No se pudieron cargar las citas de hoy.';
+        setTodayError(msg);
       }
     }
 
-    void loadToday();
-  }, [token]);
-
-  // ===== Efecto: cargar estadísticas de vacunas =====
-  useEffect(() => {
-    async function loadVaccines() {
-      if (!token) return;
-
-      setLoadingVaccines(true);
-      setVaccinesError(null);
-
+    async function loadVaccines(): Promise<void> {
       try {
         const today = new Date();
         const todayIso = getIsoFromDate(today);
@@ -206,10 +194,8 @@ export function DashboardPage() {
           page: 1,
           per_page: 5,
         };
-
-        const upcomingRes = (await fetchVaccineApplications(token, upcomingFilters)) as VaccinesPaginatedResponse<VaccineApplication>;
+        const upcomingRes = (await fetchVaccineApplications(token!, upcomingFilters)) as VaccinesPaginatedResponse<VaccineApplication>;
         const upcomingData = Array.isArray(upcomingRes.data) ? upcomingRes.data : [];
-
         setUpcomingVaccines(upcomingData);
         setUpcomingTotal(upcomingRes.meta?.total ?? upcomingData.length ?? 0);
 
@@ -219,18 +205,15 @@ export function DashboardPage() {
           page: 1,
           per_page: 1,
         };
-
-        const overdueRes = (await fetchVaccineApplications(token, overdueFilters)) as VaccinesPaginatedResponse<VaccineApplication>;
+        const overdueRes = (await fetchVaccineApplications(token!, overdueFilters)) as VaccinesPaginatedResponse<VaccineApplication>;
         setOverdueTotal(overdueRes.meta?.total ?? 0);
-      } catch (err: any) {
-        console.error('Error cargando estadísticas de vacunas:', err);
-        setVaccinesError(err?.message || 'No se pudieron cargar las vacunas próximas.');
-      } finally {
-        setLoadingVaccines(false);
+      } catch (err: unknown) {
+        const msg = err && typeof err === 'object' && 'message' in err ? String((err as { message?: string }).message) : 'No se pudieron cargar las vacunas próximas.';
+        setVaccinesError(msg);
       }
     }
 
-    void loadVaccines();
+    void Promise.all([loadToday(), loadVaccines()]).finally(() => setLoadingDashboard(false));
   }, [token]);
 
   const citasHoyLabel = todayCount != null ? String(todayCount) : '—';
@@ -307,11 +290,11 @@ export function DashboardPage() {
             </button>
           </div>
 
-          {loadingToday && <p className="text-[11px] text-slate-700">Cargando citas…</p>}
+          {loadingDashboard && <p className="text-[11px] text-slate-700">Cargando citas…</p>}
 
-          {todayError && !loadingToday && <p className="text-[11px] text-red-700">{todayError}</p>}
+          {todayError && !loadingDashboard && <p className="text-[11px] text-red-700">{todayError}</p>}
 
-          {!loadingToday && !todayError && (
+          {!loadingDashboard && !todayError && (
             <>
               {todayConsultations.length === 0 ? (
                 <p className="text-[11px] text-slate-700">Hoy no hay citas registradas.</p>
@@ -396,11 +379,11 @@ export function DashboardPage() {
             </button>
           </div>
 
-          {loadingVaccines && <p className="text-[11px] text-slate-700">Cargando vacunas…</p>}
+          {loadingDashboard && <p className="text-[11px] text-slate-700">Cargando vacunas…</p>}
 
-          {vaccinesError && !loadingVaccines && <p className="text-[11px] text-red-700">{vaccinesError}</p>}
+          {vaccinesError && !loadingDashboard && <p className="text-[11px] text-red-700">{vaccinesError}</p>}
 
-          {!loadingVaccines && !vaccinesError && (
+          {!loadingDashboard && !vaccinesError && (
             <>
               {upcomingVaccines.length === 0 && (overdueTotal ?? 0) === 0 ? (
                 <p className="text-[11px] text-slate-700">

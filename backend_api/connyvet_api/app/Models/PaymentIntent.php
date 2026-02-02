@@ -22,6 +22,21 @@ class PaymentIntent extends Model
     return $this->hasMany(PaymentTransaction::class);
   }
 
+  public function patient()
+  {
+    return $this->belongsTo(Patient::class);
+  }
+
+  public function tutor()
+  {
+    return $this->belongsTo(Tutor::class);
+  }
+
+  public function consultation()
+  {
+    return $this->belongsTo(Consultation::class);
+  }
+
   public function markPaid(int $amount, array $meta = []): void
   {
     $this->amount_paid = min($this->amount_total, ($this->amount_paid ?? 0) + $amount);

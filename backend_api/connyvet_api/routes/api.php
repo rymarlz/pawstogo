@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\BudgetController;
 
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\V1\PaymentIntentController;
+use App\Http\Controllers\Api\V1\MercadoPagoWebhookController;
 
 // Models (para policies opcionales)
 use App\Models\Payment;
@@ -116,19 +118,12 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
         // =========================
         // Consultas
         // =========================
-        // Archivos de consulta (upload / delete)
+        Route::post('consultations/{consultation}/attachments', [ConsultationController::class, 'uploadAttachments'])
+            ->name('consultations.attachments.upload');
 
-
-        Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    Route::post('consultations/{consultation}/attachments', [ConsultationController::class, 'storeAttachments']);
-});
-
-Route::post('consultations/{consultation}/attachments', [ConsultationController::class, 'uploadAttachments'])
-    ->name('consultations.attachments.upload');
-
-Route::delete('consultations/{consultation}/attachments/{index}', [ConsultationController::class, 'deleteAttachment'])
-    ->whereNumber('index')
-    ->name('consultations.attachments.delete');
+        Route::delete('consultations/{consultation}/attachments/{index}', [ConsultationController::class, 'deleteAttachment'])
+            ->whereNumber('index')
+            ->name('consultations.attachments.delete');
 
         Route::apiResource('consultations', ConsultationController::class)
             ->parameters(['consultations' => 'consultation'])
@@ -184,11 +179,10 @@ Route::delete('consultations/{consultation}/attachments/{index}', [ConsultationC
             ->name('payments.cancel')
             ->middleware('can:update,payment');
 
-// ---- Descarga adjuntos de consulta (con ?token=... igual que PDFs) ----
-Route::get('consultations/{consultation}/attachments/{index}/download', [ConsultationController::class, 'downloadAttachment'])
-    ->middleware(['sanctum.query', 'throttle:60,1'])
-    ->name('consultations.attachments.download');
-
+        // Descarga adjuntos de consulta (con ?token=... igual que PDFs)
+        Route::get('consultations/{consultation}/attachments/{index}/download', [ConsultationController::class, 'downloadAttachment'])
+            ->middleware(['sanctum.query', 'throttle:60,1'])
+            ->name('consultations.attachments.download');
 
         // =========================
         // PRESUPUESTOS (BUDGETS)
@@ -199,7 +193,34 @@ Route::get('consultations/{consultation}/attachments/{index}/download', [Consult
 
         Route::post('budgets/{budget}/send-email', [BudgetController::class, 'sendEmail'])
             ->name('budgets.send_email');
+
+        // =========================
+        // PAYMENT INTENTS (v1)
+        // =========================
+        Route::prefix('payment-intents')->as('payment_intents.')->group(function () {
+            Route::get('/', [PaymentIntentController::class, 'index'])->name('index');
+            Route::post('/', [PaymentIntentController::class, 'store'])->name('store');
+            Route::get('/{id}', [PaymentIntentController::class, 'show'])->name('show');
+            Route::post('/{id}/start', [PaymentIntentController::class, 'start'])->name('start');
+            Route::post('/{id}/mark-manual-paid', [PaymentIntentController::class, 'markManualPaid'])->name('mark_manual_paid');
+            Route::post('/{id}/cancel', [PaymentIntentController::class, 'cancel'])->name('cancel');
+        });
     });
+});
+
+// =========================================================
+// WEBHOOKS Y CALLBACKS PÚBLICOS (sin autenticación)
+// =========================================================
+Route::prefix('v1/payment-intents')->as('api.v1.payment_intents.')->group(function () {
+    // MercadoPago webhook (POST desde MercadoPago)
+    Route::post('{id}/mercadopago/webhook', [MercadoPagoWebhookController::class, 'webhook'])
+        ->name('mercadopago.webhook')
+        ->middleware('throttle:120,1'); // Rate limit más alto para webhooks
+    
+    // MercadoPago callback (GET cuando el usuario retorna)
+    Route::get('{id}/mercadopago/callback', [MercadoPagoWebhookController::class, 'callback'])
+        ->name('mercadopago.callback')
+        ->middleware('throttle:60,1');
 });
 
 // =========================================================

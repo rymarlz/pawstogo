@@ -18,7 +18,7 @@ class StorePaymentIntentRequest extends FormRequest
       'amount_total' => ['required','integer','min:1'],
       'currency' => ['nullable','string','size:3'],
 
-      'provider' => ['nullable','in:manual,webpay_plus'],
+      'provider' => ['nullable','in:manual,webpay_plus,mercadopago'],
       'title' => ['nullable','string','max:255'],
       'description' => ['nullable','string','max:5000'],
       'meta' => ['nullable','array'],

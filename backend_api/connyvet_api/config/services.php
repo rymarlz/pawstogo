@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'mercadopago' => [
+        'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+        'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
+        'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'), // Para validar x-signature en webhooks
+        'environment' => env('MERCADOPAGO_ENVIRONMENT', 'sandbox'), // sandbox | production
+    ],
+
 ];

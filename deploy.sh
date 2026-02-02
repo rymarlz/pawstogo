@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Script de despliegue para ConnyVet
+# Script de despliegue para ConnyVet (DigitalOcean)
 # Uso: ./deploy.sh
+# Referencia servidor/datos: OCEAN_REFERENCIA.md
 
 set -e  # Salir si hay algún error
 

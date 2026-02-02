@@ -1,14 +1,33 @@
 // src/api/index.ts
 
+/** Respuesta de error normalizada de la API (message y/o errors de validación). */
+export interface ApiError {
+  message?: string;
+  errors?: Record<string, string[]>;
+  [key: string]: unknown;
+}
+
 export type ApiFetchOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   token?: string | null;
-  data?: any; // JSON body
-  body?: any; // Alias para data (compatibilidad)
-  params?: Record<string, any>; // Query parameters
+  /** Cuerpo JSON (objeto o array). Preferir tipos concretos en lugar de any. */
+  data?: unknown;
+  /** Alias de data para compatibilidad. */
+  body?: unknown;
+  params?: Record<string, string | number | boolean | null | undefined>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
 };
+
+/** Devuelve un mensaje mostrable al usuario a partir de un ApiError. */
+export function getApiErrorMessage(err: ApiError): string {
+  if (err.message && String(err.message).trim()) return String(err.message).trim();
+  if (err.errors && typeof err.errors === 'object') {
+    const first = Object.values(err.errors).flat().find(Boolean);
+    if (first) return String(first);
+  }
+  return 'Error en la solicitud';
+}
 
 export const API_BASE_URL =
   (import.meta as any).env?.VITE_API_BASE_URL ??
@@ -72,6 +91,13 @@ export async function apiFetch<T = any>(path: string, opts: ApiFetchOptions = {}
   const res = await fetch(url, { method, headers: finalHeaders, body: fetchBody, signal });
   const json = await parseJsonSafe(res);
 
-  if (!res.ok) throw json;
+  if (!res.ok) {
+    const apiError: ApiError = {
+      message: typeof json?.message === 'string' ? json.message : undefined,
+      errors: json?.errors && typeof json.errors === 'object' ? json.errors : undefined,
+      ...json,
+    };
+    throw apiError;
+  }
   return json as T;
 }

@@ -331,12 +331,28 @@ cd /var/www/connyvet
 ### 8.2 Clonar el repositorio
 
 ```bash
-# Clonar tu repositorio
-git clone https://github.com/tu-usuario/connyvet.git .
+# Opción 1: Usar token en la URL (más rápido) - IMPORTANTE: el punto (.) al final clona en el directorio actual
+git clone https://rymarlz:TU_TOKEN_AQUI@github.com/rymarlz/pawstogo.git .
 
-# O si es privado, usar SSH
-# git clone git@github.com:tu-usuario/connyvet.git .
+# Opción 2: Si olvidaste el punto y se creó un subdirectorio, mueve el contenido:
+# mv pawstogo/* .
+# mv pawstogo/.* . 2>/dev/null || true
+# rmdir pawstogo
+
+# Opción 3: Clonar y luego configurar credenciales
+git clone https://github.com/rymarlz/pawstogo.git .
+# Luego configurar el token:
+echo "https://rymarlz:TU_TOKEN_AQUI@github.com" > ~/.git-credentials
+chmod 600 ~/.git-credentials
+git config --global credential.helper store
+
+# Opción 4: Si tienes SSH configurado
+# git clone git@github.com:rymarlz/pawstogo.git .
 ```
+
+**Nota importante**: 
+- Reemplaza `TU_TOKEN_AQUI` con tu Classic Token de GitHub (ghp_...)
+- El punto (`.`) al final del comando `git clone` es crucial para clonar directamente en el directorio actual
 
 ### 8.3 Configurar el Backend (Laravel)
 

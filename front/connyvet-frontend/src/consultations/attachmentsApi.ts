@@ -17,18 +17,6 @@ export async function uploadConsultationAttachments(
   consultationId: number,
   items: { file: any; detail: string }[],
 ) {
-  console.log('✅ USING attachmentsApi.ts upload');
-
-  const debug = items.map((x, i) => ({
-    i,
-    fileType: typeof x?.file,
-    name: x?.file?.name,
-    size: x?.file?.size,
-    mime: x?.file?.type,
-    isFile: isRealFile(x?.file),
-  }));
-  console.table(debug);
-
   const bad = items.findIndex((x) => !isRealFile(x?.file));
   if (bad >= 0) {
     throw new Error(`Adjunto inválido: items[${bad}].file NO es File real`);

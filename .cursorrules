@@ -1,0 +1,77 @@
+# ConnyVet — Reglas del Proyecto (Cursor)
+
+Estas reglas reflejan la arquitectura, stack y convenciones del proyecto. Seguirlas en nuevas sesiones para mantener consistencia.
+
+---
+
+## Stack
+
+- **Backend:** Laravel 12, PHP 8.2, Sanctum, DomPDF, MercadoPago SDK, Transbank SDK. API REST en `/api/v1`.
+- **Frontend:** React 19, TypeScript, Vite 5, Tailwind 4, React Router 7, React Hook Form, Zod, Axios.
+- **BD:** MySQL o SQLite según `.env`. Migraciones en `backend_api/connyvet_api/database/migrations`.
+
+---
+
+## Rutas y paths
+
+- **Backend:** `backend_api/connyvet_api/`. API base: `http://localhost:8000/api/v1` (o `VITE_API_BASE_URL` en front).
+- **Frontend:** `front/connyvet-frontend/`. Rutas UI en español: `/dashboard/pacientes`, `/dashboard/consultas`, `/dashboard/pagos`, etc.
+- **Rutas API:** inglés, plural: `patients`, `consultations`, `payments`, `tutores`, `vaccines`, `vaccine-applications`, `hospitalizations`, `budgets`, `payment-intents`, `admin/users`.
+
+---
+
+## Backend (Laravel)
+
+- Controladores en `app/Http/Controllers/Api/` (y `Admin/`, `Api/V1/`). Nombres: `{Recurso}Controller`, métodos estándar para recursos: `index`, `store`, `show`, `update`, `destroy`.
+- Modelos en `app/Models/` (PascalCase singular). Tablas y columnas en snake_case. Usar `$fillable`, `$casts` y relaciones (camelCase).
+- Rutas en `routes/api.php`: prefijo `v1`, middleware `auth:sanctum` para rutas protegidas. Rutas públicas: auth login, PDFs con `sanctum.query`, webhooks MercadoPago.
+- Validación: Form Requests en `app/Http/Requests/`. Reglas con array (ej. `'patient_id' => ['required','exists:patients,id']`).
+- Respuestas JSON: éxito con clave `data`; listas paginadas con `meta`: `current_page`, `last_page`, `per_page`, `total`. Errores 422 con `errors` en formato Laravel.
+- Políticas: usar `$this->authorize('view', $model)` y middleware `can:viewAny,Model` cuando exista policy.
+- Servicios externos (MercadoPago): instanciar con nombre de clase como string (ej. `new $paymentClientClass()`) para evitar errores de IDE si el SDK no está instalado. Capturar excepciones con `\Exception` y `instanceof` con string de clase.
+
+---
+
+## Frontend (React + TypeScript)
+
+- Carpetas por dominio: `auth/`, `admin/`, `clinic/`, `consultations/`, `vaccines/`, `payments/`, `budgets/`, `hospitalizations/`, `tutores/`, `clinical-records/`, `agenda/`. Cada módulo: `api.ts`, `types.ts`, `pages/`, y opcionalmente `components/`.
+- Componentes y páginas en PascalCase (ej. `PatientListPage.tsx`, `ConsultationForm.tsx`). Utilidades y tipos en minúsculas (ej. `api.ts`, `types.ts`).
+- Tipos: interfaces para modelos y payloads (ej. `Patient`, `PatientPayload`). Respuestas paginadas: `PaginatedResponse<T>`, `PaginatedMeta`. Tipos union para catálogos (ej. `Species`, `Sex`).
+- API: usar `apiFetch` de `src/api/index.ts` para JSON. Para subida de archivos usar `fetch` con `FormData` y no fijar `Content-Type`. Token en `Authorization: Bearer`.
+- Rutas definidas en `App.tsx`. Protección con `ProtectedRoute` y `AdminRoute` donde aplique. Rutas públicas: `/login`, `/register`.
+- Formularios: React Hook Form; validación con Zod cuando se use. Estilos con Tailwind y `clsx` para clases condicionales.
+
+---
+
+## Convenciones de nombres
+
+- **Backend:** camelCase para variables y métodos PHP. snake_case para tablas, columnas y nombres de rutas internos.
+- **Frontend:** camelCase para variables, props y funciones. Rutas de UI en español (paths), nombres de endpoints en inglés (api.ts).
+- **API:** recursos en inglés, plural. Parámetros de ruta en camelCase en Laravel (ej. `consultation`, `patient`).
+
+---
+
+## Módulos y extensión
+
+- Objetivo: 40 módulos. Estado actual documentado en `.ai-project-memory.md` (≈16 con código completo, resto pendiente).
+- Al agregar un módulo: crear controlador, modelo, migración y rutas en backend; en frontend crear carpeta de dominio con `api.ts`, `types.ts`, páginas y registrar rutas en `App.tsx`. Actualizar menú en `DashboardLayout.tsx` si aplica.
+- Pagos online: usar `PaymentIntentController` y `app/Services/Payments/` (Manual, WebpayPlus, MercadoPago). Webhooks y callbacks de MercadoPago son rutas públicas sin `auth:sanctum`.
+
+---
+
+## Archivos clave
+
+- Memoria del proyecto: `.ai-project-memory.md` (stack, arquitectura, estado de módulos, convenciones).
+- API Laravel: `backend_api/connyvet_api/routes/api.php`, `app/Http/Controllers/Api/`, `app/Models/`.
+- Frontend rutas: `front/connyvet-frontend/src/App.tsx`. Menú: `src/layouts/DashboardLayout.tsx`.
+- Cliente API frontend: `front/connyvet-frontend/src/api/index.ts` (`apiFetch`, `API_BASE_URL`).
+- Despliegue: `GUIA_DESPLIEGUE_DIGITALOCEAN.md`, `RESUMEN_DESPLIEGUE.md`, `OCEAN_REFERENCIA.md` (datos Ocean, user/pass/BD, Composer --no-dev).
+
+---
+
+## Errores frecuentes a evitar
+
+- No usar `Content-Type: application/json` al enviar `FormData` desde el frontend.
+- No referenciar clases de MercadoPago directamente en type hints si el SDK puede no estar instalado; usar strings para instanciar y para `instanceof`.
+- Mantener respuestas API con `data` y paginación con `meta`. No cambiar formato de errores de validación (422 + `errors`).
+- No duplicar rutas en `App.tsx` (ej. pagos detalle vs edición); unificar o diferenciar claramente.

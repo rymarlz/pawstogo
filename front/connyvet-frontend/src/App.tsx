@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 
 // Guards
@@ -64,8 +64,11 @@ import { BudgetListPage } from './budgets/pages/BudgetListPage';
 import { BudgetCreatePage } from './budgets/pages/BudgetCreatePage';
 import { BudgetDetailPage } from './budgets/pages/BudgetDetailPage';
 
-
-
+/** Redirige /presupuestos/:id/editar al detalle (no existe BudgetEditPage aún). */
+function BudgetEditRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={id ? `/dashboard/presupuestos/${id}` : '/dashboard/presupuestos'} replace />;
+}
 
 
 
@@ -304,8 +307,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-<Route path="/dashboard/agenda" element={<Navigate to="/dashboard/consultas" replace />} />
-
           {/* PAGOS */}
           <Route
             path="/dashboard/pagos"
@@ -327,11 +328,18 @@ function App() {
             path="/dashboard/pagos/:id"
             element={
               <ProtectedRoute>
+                <PaymentDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/pagos/:id/editar"
+            element={
+              <ProtectedRoute>
                 <PaymentEditPage />
               </ProtectedRoute>
             }
           />
-<Route path="/dashboard/pagos/:id" element={<PaymentDetailPage />} />
           {/* AGENDA CLÍNICA */}
           <Route
             path="/dashboard/agenda"
@@ -374,7 +382,7 @@ function App() {
   path="/dashboard/presupuestos/:id/editar"
   element={
     <ProtectedRoute>
-      <BudgetListPage />
+      <BudgetEditRedirect />
     </ProtectedRoute>
   }
 />

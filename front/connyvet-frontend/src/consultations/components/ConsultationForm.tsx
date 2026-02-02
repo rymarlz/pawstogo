@@ -52,6 +52,10 @@ const toTrim = (v: unknown): string => String(v ?? '').trim();
 
 const mapStatusForApi = (s: ConsultationStatus): any => s;
 
+/** Límites de listas en selects (sin paginación en UI). Mostrar aviso si hay muchos registros. */
+const PATIENTS_PER_PAGE = 200;
+const DOCTORS_PER_PAGE = 100;
+
 export interface ConsultationFormValues {
   patient_id: number | null;
   tutor_id: number | null;
@@ -184,7 +188,7 @@ export function ConsultationForm(props: ConsultationFormProps) {
     async function loadOptions() {
       setLoadingOptions(true);
       try {
-        const pRes: any = await apiFetch('/patients?per_page=200&active=true', { token });
+        const pRes: any = await apiFetch(`/patients?per_page=${PATIENTS_PER_PAGE}&active=true`, { token });
 
         const patientsRaw = Array.isArray(pRes?.data)
           ? pRes.data
@@ -205,7 +209,7 @@ export function ConsultationForm(props: ConsultationFormProps) {
         setPatients(pOptions);
 
         if (user?.role === 'admin' || user?.role === 'doctor') {
-          const dRes: any = await apiFetch('/admin/users?role=doctor&per_page=100', { token });
+          const dRes: any = await apiFetch(`/admin/users?role=doctor&per_page=${DOCTORS_PER_PAGE}`, { token });
 
           const dRaw = Array.isArray(dRes?.data)
             ? dRes.data
@@ -359,6 +363,9 @@ export function ConsultationForm(props: ConsultationFormProps) {
               ))}
             </select>
             {fieldError('patient_id') && <p className="mt-1 text-[11px] text-rose-600">{fieldError('patient_id')}</p>}
+            {patients.length > 0 && (
+              <p className="mt-1 text-[11px] text-gray-500">Mostrando los primeros {PATIENTS_PER_PAGE} pacientes.</p>
+            )}
             {fieldError('tutor_id') && <p className="mt-1 text-[11px] text-rose-600">{fieldError('tutor_id')}</p>}
           </div>
 
@@ -377,6 +384,9 @@ export function ConsultationForm(props: ConsultationFormProps) {
               ))}
             </select>
             {fieldError('doctor_id') && <p className="mt-1 text-[11px] text-rose-600">{fieldError('doctor_id')}</p>}
+            {doctors.length > 0 && (
+              <p className="mt-1 text-[11px] text-gray-500">Mostrando los primeros {DOCTORS_PER_PAGE} doctores.</p>
+            )}
           </div>
 
           <div>

@@ -9,6 +9,7 @@ class PaymentProviderFactory
     return match ($provider) {
       'manual' => new ManualPaymentProvider(),
       'webpay_plus' => new WebpayPlusProvider(),
+      'mercadopago' => new MercadoPagoProvider(),
       default => throw new \InvalidArgumentException("Unsupported provider: {$provider}"),
     };
   }
