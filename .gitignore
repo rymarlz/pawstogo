@@ -67,3 +67,6 @@ Thumbs.db
 # Archivos de SSH (si los hay accidentalmente)
 *.pub
 eval*
+
+# App Flutter (solo local; no se sube al repo ni al servidor)
+mobile_app/
