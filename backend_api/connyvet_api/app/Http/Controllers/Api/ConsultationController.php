@@ -87,11 +87,11 @@ class ConsultationController extends Controller
         $userId = optional($request->user())->id;
 
         $validated = $request->validate([
-            'patient_id' => ['required', 'integer', 'exists:patients,id'],
+            'patient_id' => ['nullable', 'integer', 'exists:patients,id'],
             'tutor_id'   => ['nullable', 'integer', 'exists:tutors,id'],
             'doctor_id'  => ['nullable', 'integer', 'exists:users,id'],
 
-            'date'       => ['required', 'date'],
+            'date'       => ['nullable', 'date'],
             'visit_type' => ['nullable', 'string', 'max:50'],
             'reason'     => ['nullable', 'string', 'max:191'],
 
@@ -116,11 +116,11 @@ class ConsultationController extends Controller
             'attachments_meta' => ['nullable', 'array'],
             'extra_data'       => ['nullable', 'array'],
 
-            // receta + examenes
+            // receta + examenes (todo opcional)
             'prescription' => ['nullable', 'array'],
             'prescription.notes' => ['nullable', 'string'],
             'prescription.items' => ['nullable', 'array'],
-            'prescription.items.*.drug_name' => ['required_with:prescription.items', 'string', 'max:191'],
+            'prescription.items.*.drug_name' => ['nullable', 'string', 'max:191'],
             'prescription.items.*.presentation' => ['nullable', 'string', 'max:191'],
             'prescription.items.*.dose' => ['nullable', 'string', 'max:191'],
             'prescription.items.*.frequency' => ['nullable', 'string', 'max:191'],
@@ -129,7 +129,7 @@ class ConsultationController extends Controller
             'prescription.items.*.instructions' => ['nullable', 'string'],
 
             'exam_orders' => ['nullable', 'array'],
-            'exam_orders.*.exam_name' => ['required_with:exam_orders', 'string', 'max:191'],
+            'exam_orders.*.exam_name' => ['nullable', 'string', 'max:191'],
             'exam_orders.*.priority' => ['nullable', Rule::in(['normal', 'urgente'])],
             'exam_orders.*.status' => ['nullable', Rule::in(['requested', 'done', 'cancelled'])],
             'exam_orders.*.notes' => ['nullable', 'string'],
@@ -137,6 +137,7 @@ class ConsultationController extends Controller
 
         $validated['status'] = $validated['status'] ?? 'cerrada';
         $validated['active'] = $validated['active'] ?? true;
+        $validated['date'] = $validated['date'] ?? now();
 
         $validated['created_by'] = $userId;
         $validated['updated_by'] = $userId;
@@ -194,11 +195,11 @@ class ConsultationController extends Controller
         $userId = optional($request->user())->id;
 
         $validated = $request->validate([
-            'patient_id' => ['sometimes', 'required', 'integer', 'exists:patients,id'],
+            'patient_id' => ['nullable', 'integer', 'exists:patients,id'],
             'tutor_id'   => ['nullable', 'integer', 'exists:tutors,id'],
             'doctor_id'  => ['nullable', 'integer', 'exists:users,id'],
 
-            'date'       => ['sometimes', 'required', 'date'],
+            'date'       => ['nullable', 'date'],
             'visit_type' => ['nullable', 'string', 'max:50'],
             'reason'     => ['nullable', 'string', 'max:191'],
 
@@ -223,11 +224,11 @@ class ConsultationController extends Controller
             'attachments_meta' => ['nullable', 'array'],
             'extra_data'       => ['nullable', 'array'],
 
-            // receta + examenes
+            // receta + examenes (todo opcional)
             'prescription' => ['nullable', 'array'],
             'prescription.notes' => ['nullable', 'string'],
             'prescription.items' => ['nullable', 'array'],
-            'prescription.items.*.drug_name' => ['required_with:prescription.items', 'string', 'max:191'],
+            'prescription.items.*.drug_name' => ['nullable', 'string', 'max:191'],
             'prescription.items.*.presentation' => ['nullable', 'string', 'max:191'],
             'prescription.items.*.dose' => ['nullable', 'string', 'max:191'],
             'prescription.items.*.frequency' => ['nullable', 'string', 'max:191'],
@@ -236,7 +237,7 @@ class ConsultationController extends Controller
             'prescription.items.*.instructions' => ['nullable', 'string'],
 
             'exam_orders' => ['nullable', 'array'],
-            'exam_orders.*.exam_name' => ['required_with:exam_orders', 'string', 'max:191'],
+            'exam_orders.*.exam_name' => ['nullable', 'string', 'max:191'],
             'exam_orders.*.priority' => ['nullable', Rule::in(['normal', 'urgente'])],
             'exam_orders.*.status' => ['nullable', Rule::in(['requested', 'done', 'cancelled'])],
             'exam_orders.*.notes' => ['nullable', 'string'],

@@ -92,13 +92,6 @@ export function ConsultationVaccinesQuickPanel({
 
         const data = Array.isArray(res.data) ? res.data : [];
         setApps(data);
-
-        console.log(
-          '[QuickPanel vacunas] patient_id =',
-          patientId,
-          'resultado:',
-          data,
-        );
       } catch (err: any) {
         console.error(
           'Error cargando vacunas en panel rápido de consulta:',

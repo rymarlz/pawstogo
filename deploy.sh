@@ -57,6 +57,10 @@ npm run build
 # 4. Reiniciar servicios
 echo -e "${YELLOW}🔄 Reiniciando servicios...${NC}"
 sudo systemctl restart php8.2-fpm
-sudo supervisorctl restart connyvet-worker:*
+if command -v supervisorctl &>/dev/null; then
+  sudo supervisorctl restart connyvet-worker:*
+else
+  echo -e "${YELLOW}⚠️  Supervisor no instalado; workers no reiniciados. Si usas colas: apt install supervisor${NC}"
+fi
 
 echo -e "${GREEN}✅ Despliegue completado exitosamente!${NC}"

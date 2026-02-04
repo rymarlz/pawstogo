@@ -12,7 +12,7 @@ class AdminUserSeeder extends Seeder
     {
         // updateOrCreate para que si ya existe el admin, ACTUALICE la contraseña
    User::updateOrCreate(
-  ['email' => 'admin@connyvet.test'],
+  ['email' => 'admin@pawstogo.cl'],
   [
     'name' => 'Admin ConnyVet',
     'password' => 'admin1234', // <-- texto plano (mutator la hashea)

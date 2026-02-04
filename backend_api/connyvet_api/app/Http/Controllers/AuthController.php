@@ -85,6 +85,24 @@ class AuthController extends Controller
 }
 
     /**
+     * Login con Google (app móvil).
+     * Recibe id_token de Google; si el backend no tiene configurado Google OAuth
+     * devuelve 501. Cuando esté implementado: verificar token, buscar/crear usuario, devolver token.
+     */
+    public function google(Request $request)
+    {
+        $request->validate([
+            'id_token' => ['required', 'string'],
+        ]);
+
+        // TODO: Verificar id_token con Google API y obtener email/name.
+        // Buscar User por email; si no existe, crear con role=tutor. Devolver user + token.
+        return response()->json([
+            'message' => 'Inicio con Google no disponible en este servidor. Usa correo y contraseña.',
+        ], 501);
+    }
+
+    /**
      * Usuario autenticado.
      */
     public function me(Request $request)

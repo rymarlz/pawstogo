@@ -46,6 +46,7 @@ export function ConsultationListPage() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   async function load() {
@@ -118,7 +119,7 @@ export function ConsultationListPage() {
 
   async function handleDelete(id: number) {
     if (!token) {
-      alert('Sesión no válida. Vuelve a iniciar sesión.');
+      setError('Sesión no válida. Vuelve a iniciar sesión.');
       return;
     }
 
@@ -127,12 +128,12 @@ export function ConsultationListPage() {
     );
     if (!ok) return;
 
+    setDeleteError(null);
     try {
       await deleteConsultation(token, id);
       await load();
     } catch (err: any) {
-      console.error('Error eliminando consulta:', err);
-      alert(err?.message || 'No se pudo eliminar la consulta.');
+      setDeleteError(err?.message || 'No se pudo eliminar la consulta.');
     }
   }
 
@@ -224,6 +225,23 @@ export function ConsultationListPage() {
           }}
         >
           {error}
+        </div>
+      )}
+
+      {deleteError && (
+        <div
+          className="mb-4 flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"
+          role="alert"
+        >
+          <span>{deleteError}</span>
+          <button
+            type="button"
+            onClick={() => setDeleteError(null)}
+            className="shrink-0 rounded-lg px-2 py-1 hover:bg-rose-100"
+            aria-label="Cerrar mensaje"
+          >
+            ✕
+          </button>
         </div>
       )}
 

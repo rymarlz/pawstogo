@@ -269,7 +269,7 @@ export function ConsultationForm(props: ConsultationFormProps) {
       tutor_id: toIntOrNull(values.tutor_id),
       doctor_id: toIntOrNull(values.doctor_id),
 
-      date: toLaravelDateTime(values.date),
+      date: values.date?.trim() ? toLaravelDateTime(values.date) : null,
 
       visit_type: toTrim(values.visit_type) || null,
       reason: toTrim(values.reason) || null,
@@ -337,9 +337,7 @@ export function ConsultationForm(props: ConsultationFormProps) {
 
         <div className="grid gap-4 md:grid-cols-2 text-xs">
           <div>
-            <label className="mb-1 block font-medium text-slate-600">
-              Paciente <span className="text-rose-500">*</span>
-            </label>
+            <label className="mb-1 block font-medium text-slate-600">Paciente</label>
             <select
               className="input"
               value={values.patient_id ?? ''}
@@ -353,7 +351,6 @@ export function ConsultationForm(props: ConsultationFormProps) {
                   tutor_id: selected?.tutor_id ?? null,
                 });
               }}
-              required
             >
               <option value="">Selecciona un paciente…</option>
               {patients.map((p) => (
@@ -390,15 +387,12 @@ export function ConsultationForm(props: ConsultationFormProps) {
           </div>
 
           <div>
-            <label className="mb-1 block font-medium text-slate-600">
-              Fecha y hora <span className="text-rose-500">*</span>
-            </label>
+            <label className="mb-1 block font-medium text-slate-600">Fecha y hora</label>
             <input
               type="datetime-local"
               className="input"
               value={values.date}
               onChange={(e) => handleInputChange('date', e.target.value)}
-              required
             />
             {fieldError('date') && <p className="mt-1 text-[11px] text-rose-600">{fieldError('date')}</p>}
           </div>
@@ -718,21 +712,13 @@ export function ConsultationForm(props: ConsultationFormProps) {
                     </div>
 
                     <div className="mt-2">
-                      <label className="mb-1 block font-medium text-slate-600">
-                        Nombre / detalle <span className="text-rose-500">*</span>
-                      </label>
+                      <label className="mb-1 block font-medium text-slate-600">Nombre / detalle</label>
                       <input
                         className="input"
                         placeholder="Ej: Examen de sangre, Radiografía tórax, Boleta..."
                         value={a.detail}
                         onChange={(ev) => updateAttachmentDetail(i, ev.target.value)}
-                        required
                       />
-                      {!a.detail?.trim() && (
-                        <p className="mt-1 text-[11px] text-rose-600">
-                          Debes ingresar un nombre/detalle para este archivo.
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}

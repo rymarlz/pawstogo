@@ -59,8 +59,9 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
     // Auth (público)
     // =========================
     Route::prefix('auth')->as('auth.')->group(function () {
-        Route::post('/login',  [AuthController::class, 'login'])->name('login');
+        Route::post('/login',   [AuthController::class, 'login'])->name('login');
         Route::post('/register', [AuthController::class, 'register'])->name('register');
+        Route::post('/google',  [AuthController::class, 'google'])->name('google');
     });
 
     // =========================================================

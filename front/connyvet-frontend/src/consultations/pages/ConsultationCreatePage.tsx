@@ -67,36 +67,11 @@ export function ConsultationCreatePage() {
     setValidationErrors(null);
 
     try {
-      if (!payload?.patient_id) {
-        setApiError('Debes seleccionar un paciente.');
-        return;
-      }
-
-      // Validar detalle obligatorio por adjunto
-      const invalid = attachments.find((a) => !a.detail || !a.detail.trim());
-      if (attachments.length > 0 && invalid) {
-        setApiError('Cada adjunto debe tener un nombre/detalle antes de guardar.');
-        return;
-      }
-
-      // 1) Crear consulta (JSON)
+      // 1) Crear consulta (JSON) — todos los campos son opcionales
       const created = await createConsultation(token, payload);
 
       // 2) Subir adjuntos (FormData)
       if (attachments.length > 0) {
-        console.log(
-          '[CreatePage] attachments debug:',
-          attachments.map((a: any, i: number) => ({
-            i,
-            isFile: a?.file instanceof File,
-            ctor: a?.file?.constructor?.name,
-            name: a?.file?.name,
-            size: a?.file?.size,
-            type: a?.file?.type,
-            detail: a?.detail,
-          })),
-        );
-
         await uploadConsultationAttachments(token, created.id, attachments as any);
       }
 

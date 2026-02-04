@@ -319,7 +319,6 @@ export function DashboardPage() {
                           className="inline-flex items-center rounded-xl border px-2 py-1 text-[11px] hover:bg-white"
                           style={{
                             borderColor: 'color-mix(in srgb, var(--brand) 35%, #e5e7eb)',
-                          
                           }}
                         >
                           Ver

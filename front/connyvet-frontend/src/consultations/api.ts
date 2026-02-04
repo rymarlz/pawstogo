@@ -115,20 +115,8 @@ export async function uploadConsultationAttachments(
   }
 
   // ✅ DEBUG REAL (te va a decir si estás mandando strings/objetos en vez de File)
-  const debug = items.map((x: any, i: number) => ({
-    i,
-    file_typeof: typeof x?.file,
-    name: x?.file?.name,
-    size: x?.file?.size,
-    mime: x?.file?.type,
-    isFile: isRealFile(x?.file),
-    detail: x?.detail,
-  }));
-  console.log('[uploadConsultationAttachments] items debug:', debug);
-
   const badIndex = items.findIndex((x: any) => !isRealFile(x?.file));
   if (badIndex >= 0) {
-    console.error('❌ Adjuntos inválidos. file NO es File real:', items[badIndex]);
     throw {
       message: `Adjunto inválido: files[${badIndex}] no es un archivo.`,
       errors: { [`files.${badIndex}`]: ['El archivo no es un File real.'] },
@@ -146,16 +134,7 @@ export async function uploadConsultationAttachments(
     fd.append('notes[]', label);
   });
 
-  // ✅ URL ABSOLUTA: evita que quede pegado a /dashboard o a otro host
   const url = joinUrl(API_BASE_URL, `/consultations/${consultationId}/attachments`);
-
-  // DEBUG: Verificar FormData antes de enviar
-  console.log('[uploadConsultationAttachments] FormData entries:');
-  for (const [key, value] of fd.entries()) {
-    console.log(`  ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
-  }
-  console.log('[uploadConsultationAttachments] Sending to:', url);
-  console.log('[uploadConsultationAttachments] Body is FormData:', fd instanceof FormData);
 
   const res = await fetch(url, {
     method: 'POST',
@@ -170,7 +149,6 @@ export async function uploadConsultationAttachments(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    console.error('[uploadConsultationAttachments] failed', res.status, data);
     throw data;
   }
 

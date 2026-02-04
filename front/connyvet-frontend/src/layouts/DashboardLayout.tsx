@@ -50,10 +50,6 @@ const navSections: NavSection[] = [
     items: [
       { to: '/dashboard/pacientes', label: 'Pacientes', icon: '🐾' },
       { to: '/dashboard/tutores', label: 'Tutores', icon: '👤' },
-
-      // ✅ Mantén “Consultas médicas” si es un listado/gestión distinta.
-      // Si es lo mismo que Agenda, bórralo para no duplicar.
-      { to: '/dashboard/consultas', label: 'Consultas médicas', icon: '📋' },
     ],
   },
 
@@ -179,8 +175,10 @@ export function DashboardLayout({ title, children }: DashboardLayoutProps) {
             Rol: {roleLabels[role]}
           </p>
           <button
+            type="button"
             onClick={handleLogout}
             className="mt-2 inline-flex items-center rounded-xl border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 hover:bg-slate-100"
+            aria-label="Cerrar sesión"
           >
             Cerrar sesión
           </button>
@@ -201,8 +199,10 @@ export function DashboardLayout({ title, children }: DashboardLayoutProps) {
           </div>
 
           <button
+            type="button"
             onClick={handleLogout}
             className="rounded-xl border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 hover:bg-slate-100"
+            aria-label="Cerrar sesión"
           >
             Salir
           </button>
