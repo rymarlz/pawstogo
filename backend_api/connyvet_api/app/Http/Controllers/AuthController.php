@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Auth;
 class AuthController extends Controller
 {
     /**
-     * Registro (si aún lo usas).
-     * OJO: en un sistema clínico lo normal es que solo el admin cree usuarios.
+     * Registro desde la app móvil (tutores).
+     * Crea usuario con role=tutor por defecto. La app envía name, email, password, password_confirmation.
      */
     public function register(Request $request)
     {

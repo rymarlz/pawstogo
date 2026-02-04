@@ -60,7 +60,7 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
     // =========================
     Route::prefix('auth')->as('auth.')->group(function () {
         Route::post('/login',  [AuthController::class, 'login'])->name('login');
-        // Route::post('/register', [AuthController::class, 'register'])->name('register');
+        Route::post('/register', [AuthController::class, 'register'])->name('register');
     });
 
     // =========================================================
