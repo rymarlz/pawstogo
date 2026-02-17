@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\VaccineApplication;
 use App\Models\Vaccine;
+use App\Models\Tutor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
@@ -37,7 +39,18 @@ class VaccineApplicationController extends Controller
             $query->where('patient_id', $patientId);
         }
 
-        if ($tutorId = $request->get('tutor_id')) {
+        // Solo mostrar aplicaciones del tutor del usuario. Si no hay tutor asociado al correo, no mostrar de otros.
+        $tutorId = $request->get('tutor_id');
+        if (!$tutorId && Auth::check()) {
+            $tutor = Tutor::where('email', Auth::user()->email)->first();
+            if ($tutor) {
+                $tutorId = $tutor->id;
+            } elseif (Auth::user()->role === \App\Models\User::ROLE_TUTOR) {
+                // Usuario es tutor pero no tiene registro en tutors (o el email no coincide): no mostrar vacunas de otros
+                $query->whereRaw('1 = 0');
+            }
+        }
+        if ($tutorId) {
             $query->where('tutor_id', $tutorId);
         }
 

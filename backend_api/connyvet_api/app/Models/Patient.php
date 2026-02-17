@@ -46,9 +46,12 @@ class Patient extends Model
         'active'     => 'boolean',
     ];
 
-    // Para que se incluya automáticamente en el JSON
+    // Para que se incluya automáticamente en el JSON (web + mobile)
     protected $appends = [
         'photo_url',
+        'file_number',
+        'sex_display',
+        'species_display',
     ];
 
     // ==========================
@@ -97,6 +100,39 @@ class Patient extends Model
         return Storage::disk('public')->url($this->photo_path);
     }
 
+    /**
+     * N° de ficha: ID del paciente (o file_number si existiera en el futuro).
+     * Documentado para web y mobile.
+     */
+    public function getFileNumberAttribute(): int
+    {
+        return (int) $this->id;
+    }
 
+    /**
+     * Sexo para mostrar: Hembra/Macho normalizado.
+     */
+    public function getSexDisplayAttribute(): string
+    {
+        $s = strtolower(trim((string) ($this->sex ?? '')));
+        if ($s === 'h' || $s === 'hembra') {
+            return 'Hembra';
+        }
+        if ($s === 'm' || $s === 'macho') {
+            return 'Macho';
+        }
+        return $s !== '' ? $this->sex : '—';
+    }
 
+    /**
+     * Especie para mostrar (capitalizada).
+     */
+    public function getSpeciesDisplayAttribute(): string
+    {
+        $s = trim((string) ($this->species ?? ''));
+        if ($s === '') {
+            return '—';
+        }
+        return mb_convert_case($s, MB_CASE_TITLE, 'UTF-8');
+    }
 }

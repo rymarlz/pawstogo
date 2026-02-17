@@ -60,27 +60,32 @@ class PatientController extends Controller
         // y también un objeto tutor.
 $patients->getCollection()->transform(function (Patient $p) {
     return [
-        'id'          => $p->id,
-        'name'        => $p->name,
-        'species'     => $p->species,
-        'breed'       => $p->breed,
-        'sex'         => $p->sex,
-        'birth_date'  => optional($p->birth_date)->toDateString(),
-        'color'       => $p->color,
-        'microchip'   => $p->microchip,
-        'weight_kg'   => $p->weight_kg,
-        'sterilized'  => $p->sterilized,
-        'active'      => $p->active,
-        'photo_url'   => $p->photo_url,   // 👈 AQUÍ
+        'id'            => $p->id,
+        'file_number'   => $p->file_number,
+        'name'          => $p->name,
+        'species'       => $p->species,
+        'species_display' => $p->species_display,
+        'breed'         => $p->breed,
+        'sex'           => $p->sex,
+        'sex_display'   => $p->sex_display,
+        'birth_date'    => optional($p->birth_date)->toDateString(),
+        'color'         => $p->color,
+        'microchip'     => $p->microchip,
+        'weight_kg'     => $p->weight_kg,
+        'sterilized'    => $p->sterilized,
+        'active'        => $p->active,
+        'photo_url'     => $p->photo_url,
+        'tutor_id'      => $p->tutor_id,
 
-        'tutor_name'  => $p->tutor?->name ?? $p->tutor_name,
-        'tutor_email' => $p->tutor?->email ?? $p->tutor_email,
-        'tutor_phone' => $p->tutor?->phone ?? $p->tutor_phone,
-        'tutor'       => $p->tutor ? [
-            'id'    => $p->tutor->id,
-            'name'  => $p->tutor->name,
-            'email' => $p->tutor->email,
-            'phone' => $p->tutor->phone,
+        'tutor_name'    => $p->tutor?->name ?? $p->tutor_name,
+        'tutor_email'   => $p->tutor?->email ?? $p->tutor_email,
+        'tutor_phone'   => $p->tutor?->phone ?? $p->tutor_phone,
+        'tutor'         => $p->tutor ? [
+            'id'      => $p->tutor->id,
+            'name'    => $p->tutor->name,
+            'email'   => $p->tutor->email,
+            'phone'   => $p->tutor->phone,
+            'address' => $p->tutor->address,
         ] : null,
     ];
 });
@@ -103,14 +108,20 @@ $patients->getCollection()->transform(function (Patient $p) {
 
     /**
      * GET /api/v1/patients/{patient}
+     * Incluye file_number, sex_display, species_display, tutor.address para web y mobile.
      */
     public function show(Patient $patient)
     {
         $patient->load('tutor');
-
-        return response()->json([
-            'data' => $patient,
-        ]);
+        $data = $patient->toArray();
+        $data['tutor'] = $patient->tutor ? [
+            'id'      => $patient->tutor->id,
+            'name'    => $patient->tutor->name,
+            'email'   => $patient->tutor->email,
+            'phone'   => $patient->tutor->phone,
+            'address' => $patient->tutor->address,
+        ] : null;
+        return response()->json(['data' => $data]);
     }
 
     /**

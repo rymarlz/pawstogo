@@ -1,6 +1,6 @@
 // src/consultations/pages/ConsultationListPage.tsx
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { fetchConsultations, deleteConsultation } from '../api';
@@ -34,6 +34,8 @@ function formatDateTime(iso?: string | null) {
 export function ConsultationListPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const patientIdFromUrl = searchParams.get('patient_id') ?? undefined;
 
   const [consultations, setConsultations] = useState<AnyConsultation[]>([]);
   const [filters, setFilters] = useState<ConsultationFilters>({
@@ -41,6 +43,7 @@ export function ConsultationListPage() {
     status: 'all',
     page: 1,
     per_page: 20,
+    patient_id: patientIdFromUrl ? Number(patientIdFromUrl) || patientIdFromUrl : undefined,
   });
 
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -85,7 +88,7 @@ export function ConsultationListPage() {
   useEffect(() => {
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.search, filters.status, filters.page, token, refreshKey]);
+  }, [filters.search, filters.status, filters.page, filters.patient_id, token, refreshKey]);
 
   function handleFilterChange<K extends keyof ConsultationFilters>(field: K, value: ConsultationFilters[K]) {
     setFilters(prev => ({ ...prev, [field]: value, page: 1 }));
@@ -287,10 +290,12 @@ export function ConsultationListPage() {
                           <td className="px-4 py-3 align-middle">
                             <span
                               className={
-                                estado === 'abierta'
+                                estado === 'cerrada'
                                   ? 'inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700'
-                                  : estado === 'cerrada'
-                                  ? 'inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700'
+                                  : estado === 'anulada'
+                                  ? 'inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-[11px] text-rose-700'
+                                  : estado === 'abierta'
+                                  ? 'inline-flex items-center rounded-full bg-sky-50 px-2 py-0.5 text-[11px] text-sky-700'
                                   : 'inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600'
                               }
                             >

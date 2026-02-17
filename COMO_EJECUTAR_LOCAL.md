@@ -33,6 +33,18 @@ touch database/database.sqlite
 php artisan migrate
 ```
 
+Para **poblar la BD completa** (usuarios, tutores, pacientes, vacunas, consultas, hospitalizaciones, pagos, etc.):
+
+```bash
+# Borra tablas, vuelve a migrar y ejecuta todos los seeders
+php artisan migrate:fresh --seed
+```
+
+Credenciales de prueba tras el seed:
+- **Admin/doctor/asistente:** ver `UsersSeeder` (ej. `admin@connyvet.test` / `admin1234`).
+- **Admin web:** `AdminUserSeeder` → `admin@pawstogo.cl` / `admin1234`.
+- **Tutores (app móvil):** mismo email que el tutor en BD, contraseña `tutor1234` (creados por `TutorUsersSeeder`).
+
 Levantar el servidor:
 
 ```bash

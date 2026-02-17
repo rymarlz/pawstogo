@@ -34,6 +34,9 @@ composer install --optimize-autoloader --no-dev
 # Ejecutar migraciones
 php artisan migrate --force
 
+# Enlace simbólico para que /storage sirva las fotos (pacientes, etc.)
+php artisan storage:link 2>/dev/null || true
+
 # Limpiar y cachear configuraciones
 php artisan config:clear
 php artisan route:clear

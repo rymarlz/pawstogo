@@ -10,14 +10,19 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ title, subtitle, bottomText, children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4 py-6">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 py-6"
+      style={{
+        background: 'linear-gradient(160deg, #f0fdfa 0%, #f8fafc 40%, #f1f5f9 100%)',
+      }}
+    >
       <div className="w-full max-w-5xl grid gap-8 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-stretch">
         {/* Panel de marca / información */}
-        <section className="hidden md:flex flex-col justify-between rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-slate-50 shadow-sm p-6">
+        <section className="hidden md:flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white/90 shadow-[0_8px_30px_rgba(15,23,42,0.08)] backdrop-blur-sm p-6">
           {/* Logo */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-lg font-semibold text-emerald-700">
+              <div className="h-10 w-10 rounded-2xl bg-teal-100 flex items-center justify-center text-lg font-semibold text-teal-700">
                 CV
               </div>
               <div>

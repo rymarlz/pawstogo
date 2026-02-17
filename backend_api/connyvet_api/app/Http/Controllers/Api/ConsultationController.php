@@ -9,6 +9,7 @@ use App\Models\ConsultationPrescription;
 use App\Models\ConsultationPrescriptionItem;
 use App\Services\ConsultationPdfService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +18,43 @@ use Illuminate\Validation\Rule;
 
 class ConsultationController extends Controller
 {
+    /**
+     * Títulos oficiales Web + Mobile (contrato unificado). No hardcodear en cliente.
+     */
+    private static function officialLabels(): array
+    {
+        return [
+            'reason'         => 'Motivo de consulta',
+            'anamnesis'      => 'Anamnesis',
+            'diagnosis'      => 'Diagnóstico',
+            'treatment'      => 'Tratamiento',
+            'recommendations'=> 'Recomendaciones',
+        ];
+    }
+
+    /**
+     * Construye clinical_sections a partir de una consulta (contenidos ya mapeados para Web/Mobile).
+     * anamnesis: anamnesis_actual si existe en el modelo, si no anamnesis. diagnosis: primary + secondary.
+     */
+    private function buildClinicalSections(Consultation $c): array
+    {
+        $attrs = $c->getAttributes();
+        $anamnesis = $attrs['anamnesis_actual'] ?? $c->anamnesis ?? '';
+        $diagnosisParts = array_filter([
+            $c->diagnosis_primary,
+            $c->diagnosis_secondary,
+        ]);
+        $diagnosis = implode("\n", $diagnosisParts);
+
+        return [
+            'reason'          => $c->reason ?? '',
+            'anamnesis'       => $anamnesis ?? '',
+            'diagnosis'       => $diagnosis,
+            'treatment'       => $c->treatment ?? '',
+            'recommendations' => $c->recommendations ?? '',
+        ];
+    }
+
     public function __construct(
         private ConsultationPdfService $pdfService
     ) {
@@ -45,8 +83,24 @@ class ConsultationController extends Controller
 
         if ($visitType = $request->get('visit_type')) $query->where('visit_type', $visitType);
 
-        if ($dateFrom = $request->get('date_from')) $query->whereDate('date', '>=', $dateFrom);
-        if ($dateTo   = $request->get('date_to'))   $query->whereDate('date', '<=', $dateTo);
+        // Fechas: usar timezone de la app (America/Santiago) para consistencia con "próximas citas"
+        $tz = config('app.timezone', 'America/Santiago');
+        if ($dateFrom = $request->get('date_from')) {
+            $query->whereDate('date', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->get('date_to')) {
+            $query->whereDate('date', '<=', $dateTo);
+        }
+        // Próximas citas: desde (ahora - 5 min) en adelante, excluir anuladas
+        if ($request->boolean('upcoming')) {
+            $from = Carbon::now($tz)->subMinutes(5);
+            $query->where('date', '>=', $from)
+                ->where('status', '!=', 'anulada')
+                ->where(function ($q) {
+                    $q->where('active', true)->orWhereNull('active');
+                })
+                ->orderBy('date', 'asc');
+        }
 
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
@@ -68,8 +122,15 @@ class ConsultationController extends Controller
 
         $consultations = $query->paginate($perPage);
 
+        $items = $consultations->getCollection()->map(function (Consultation $c) {
+            $arr = $c->toArray();
+            $arr['labels'] = self::officialLabels();
+            $arr['clinical_sections'] = $this->buildClinicalSections($c);
+            return $arr;
+        });
+
         return response()->json([
-            'data' => $consultations->items(),
+            'data' => $items->values()->all(),
             'meta' => [
                 'current_page' => $consultations->currentPage(),
                 'last_page'    => $consultations->lastPage(),
@@ -100,6 +161,7 @@ class ConsultationController extends Controller
             'diagnosis_primary'   => ['nullable', 'string'],
             'diagnosis_secondary' => ['nullable', 'string'],
             'treatment'           => ['nullable', 'string'],
+            'procedure'           => ['nullable', 'string'],
             'recommendations'     => ['nullable', 'string'],
 
             'weight_kg'            => ['nullable', 'numeric', 'min:0', 'max:999'],
@@ -175,14 +237,16 @@ class ConsultationController extends Controller
 
     /**
      * GET /api/v1/consultations/{consultation}
+     * Incluye labels + clinical_sections (contrato Web/Mobile unificado).
      */
     public function show(Consultation $consultation)
     {
         $consultation->load(['patient', 'tutor', 'doctor', 'prescription.items', 'examOrders']);
 
-        // Normaliza para el front: exam_orders (snake)
         $data = $consultation->toArray();
         $data['exam_orders'] = $consultation->examOrders ? $consultation->examOrders->toArray() : [];
+        $data['labels'] = self::officialLabels();
+        $data['clinical_sections'] = $this->buildClinicalSections($consultation);
 
         return response()->json(['data' => $data]);
     }
@@ -208,6 +272,7 @@ class ConsultationController extends Controller
             'diagnosis_primary'   => ['nullable', 'string'],
             'diagnosis_secondary' => ['nullable', 'string'],
             'treatment'           => ['nullable', 'string'],
+            'procedure'           => ['nullable', 'string'],
             'recommendations'     => ['nullable', 'string'],
 
             'weight_kg'            => ['nullable', 'numeric', 'min:0', 'max:999'],

@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { apiFetch } from '../../api';
 import type { Patient } from '../types';
+import { sexDisplay, speciesDisplay, LABELS_CLINICAL } from '../../lib/labels';
 
 // Helpers de formato
 function formatDate(value?: string | null): string {
@@ -82,6 +83,9 @@ export function PatientDetailPage() {
     (patient as any)?.tutor?.phone ||
     (patient as any)?.tutor_phone ||
     null;
+
+  const tutorAddress = (patient as any)?.tutor?.address ?? null;
+  const fileNumber = (patient as any)?.file_number ?? patient?.id;
 
   function handleGoBack() {
     navigate(-1);
@@ -162,9 +166,12 @@ export function PatientDetailPage() {
 
           {patient && (
             <p className="mt-1 text-xs text-slate-500">
-              Especie:{' '}
+              N.º de ficha:{' '}
+              <span className="font-medium">{fileNumber ?? patient.id}</span>
+              {' · '}
+              {LABELS_CLINICAL.species}:{' '}
               <span className="font-medium">
-                {(patient as any).species || '—'}
+                {speciesDisplay((patient as any).species, (patient as any).species_display)}
               </span>{' '}
               · Raza:{' '}
               <span className="font-medium">
@@ -172,7 +179,7 @@ export function PatientDetailPage() {
               </span>{' '}
               · Sexo:{' '}
               <span className="font-medium">
-                {(patient as any).sex || '—'}
+                {sexDisplay((patient as any).sex)}
               </span>
             </p>
           )}
@@ -180,25 +187,23 @@ export function PatientDetailPage() {
           {tutorName && (
             <p className="mt-1 text-xs text-slate-500">
               Tutor:{' '}
-              <span className="font-medium">
-                {tutorName}
-              </span>
+              <span className="font-medium">{tutorName}</span>
               {tutorEmail && (
                 <>
                   {' '}
-                  ·{' '}
-                  <span className="text-slate-600">
-                    {tutorEmail}
-                  </span>
+                  · <span className="text-slate-600">{tutorEmail}</span>
                 </>
               )}
               {tutorPhone && (
                 <>
                   {' '}
-                  · Tel:{' '}
-                  <span className="text-slate-600">
-                    {tutorPhone}
-                  </span>
+                  · Tel: <span className="text-slate-600">{tutorPhone}</span>
+                </>
+              )}
+              {tutorAddress && tutorAddress !== 'No disponible' && (
+                <>
+                  {' '}
+                  · Dirección: <span className="text-slate-600">{tutorAddress}</span>
                 </>
               )}
             </p>
@@ -233,6 +238,35 @@ export function PatientDetailPage() {
           )}
         </div>
       </section>
+
+      {/* Contexto mascota: Citas / Vacunas / Ficha clínica solo de esta mascota */}
+      {!loading && !error && patient && (
+        <section className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 mb-2">
+            Ver solo esta mascota
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to={`/dashboard/consultas?patient_id=${patient.id}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-white px-3 py-2 text-xs font-medium text-sky-800 hover:bg-sky-50"
+            >
+              Citas
+            </Link>
+            <Link
+              to={`/dashboard/vacunas?patient_id=${patient.id}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-50"
+            >
+              Vacunas
+            </Link>
+            <Link
+              to={`/dashboard/fichas/${patient.id}`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-medium text-emerald-800 hover:bg-emerald-50"
+            >
+              Ficha clínica
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Estado de carga / error */}
       {error && (

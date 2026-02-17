@@ -5,6 +5,7 @@ import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { fetchConsultation } from '../api';
 import type { Consultation } from '../types';
+import { LABELS_CLINICAL } from '../../lib/labels';
 
 function formatDateTime(iso?: string | null) {
   if (!iso) return '—';
@@ -162,27 +163,50 @@ export function ConsultationDetailPage() {
             </div>
           </section>
 
-          {/* CONTENIDO */}
+          {/* CONTENIDO: etiquetas alineadas a ficha clínica (Motivo, Anamnesis, Diagnóstico, Tratamiento, Recomendaciones) */}
           <section className="card text-xs space-y-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Resumen clínico</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-slate-400">{LABELS_CLINICAL.reason}</p>
               <p className="mt-1 text-sm text-slate-800">{consultation.reason || '—'}</p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
               <div>
-                <p className="text-[11px] text-slate-500">Anamnesis</p>
+                <p className="text-[11px] text-slate-500">{LABELS_CLINICAL.anamnesis}</p>
                 <p className="text-[12px] text-slate-800 whitespace-pre-wrap">
                   {consultation.anamnesis || '—'}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] text-slate-500">Examen físico</p>
+                <p className="text-[11px] text-slate-500">{LABELS_CLINICAL.physicalExam}</p>
                 <p className="text-[12px] text-slate-800 whitespace-pre-wrap">
                   {consultation.physical_exam || '—'}
                 </p>
               </div>
             </div>
+
+            {(consultation.diagnosis_primary || consultation.diagnosis_secondary) && (
+              <div>
+                <p className="text-[11px] text-slate-500">{LABELS_CLINICAL.diagnosis}</p>
+                <p className="text-[12px] text-slate-800 whitespace-pre-wrap">
+                  {[consultation.diagnosis_primary, consultation.diagnosis_secondary].filter(Boolean).join('\n')}
+                </p>
+              </div>
+            )}
+
+            {consultation.treatment && (
+              <div>
+                <p className="text-[11px] text-slate-500">{LABELS_CLINICAL.treatment}</p>
+                <p className="text-[12px] text-slate-800 whitespace-pre-wrap">{consultation.treatment}</p>
+              </div>
+            )}
+
+            {consultation.recommendations && (
+              <div>
+                <p className="text-[11px] text-slate-500">{LABELS_CLINICAL.recommendations}</p>
+                <p className="text-[12px] text-slate-800 whitespace-pre-wrap">{consultation.recommendations}</p>
+              </div>
+            )}
 
             <hr className="border-slate-200" />
 

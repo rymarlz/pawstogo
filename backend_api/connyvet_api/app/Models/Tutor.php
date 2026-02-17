@@ -51,6 +51,7 @@ class Tutor extends Model
     protected $appends = [
         'name',
         'phone',
+        'address',
     ];
 
     /**
@@ -85,6 +86,15 @@ class Tutor extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Dirección para mostrar (direccion en BD). "No disponible" si está vacía.
+     */
+    public function getAddressAttribute(): string
+    {
+        $d = trim((string) ($this->attributes['direccion'] ?? ''));
+        return $d !== '' ? $d : 'No disponible';
     }
 
     /**

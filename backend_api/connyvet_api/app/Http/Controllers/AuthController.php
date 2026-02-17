@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Tutor;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
@@ -79,7 +80,7 @@ class AuthController extends Controller
 
     return response()->json([
         'message' => 'Login correcto',
-        'user'    => $user,
+        'user'    => $this->userWithTutorId($user),
         'token'   => $token,
     ]);
 }
@@ -103,11 +104,23 @@ class AuthController extends Controller
     }
 
     /**
-     * Usuario autenticado.
+     * Usuario autenticado (incluye tutor_id cuando existe un Tutor con el mismo email).
      */
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($this->userWithTutorId($request->user()));
+    }
+
+    /**
+     * Devuelve el usuario como array incluyendo tutor_id si existe un Tutor con el mismo email.
+     * Así la app móvil puede filtrar mascotas, citas y vacunas por tutor.
+     */
+    private function userWithTutorId(User $user): array
+    {
+        $arr = $user->toArray();
+        $tutor = Tutor::where('email', $user->email)->first();
+        $arr['tutor_id'] = $tutor?->id;
+        return $arr;
     }
 
     /**

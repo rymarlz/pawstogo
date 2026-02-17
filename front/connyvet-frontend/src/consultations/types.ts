@@ -159,6 +159,7 @@ export type ConsultationFilters = {
   date_from?: string;
   date_to?: string;
   search?: string;
+  upcoming?: boolean;
   page?: number;
   per_page?: number;
 };

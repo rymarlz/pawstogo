@@ -5,15 +5,20 @@ import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { fetchClinicalRecord } from '../api';
 
+import { LABELS_CLINICAL, sexDisplay, speciesDisplay } from '../../lib/labels';
+
 // =============================
 // Tipos de la respuesta
 // =============================
 type ClinicalRecordPatient = {
   id: number;
+  file_number?: number;
   name: string | null;
   species: string | null;
+  species_display?: string | null;
   breed: string | null;
   sex: string | null;
+  sex_display?: string | null;
   color: string | null;
   microchip: string | null;
   birth_date: string | null;
@@ -28,6 +33,7 @@ type ClinicalRecordTutor = {
   name: string;
   email: string | null;
   phone: string | null;
+  address?: string | null;
   nombres?: string | null;
   apellidos?: string | null;
   rut?: string | null;
@@ -262,43 +268,40 @@ export function ClinicalRecordDetailPage() {
 
           {patient && (
             <p className="mt-1 text-xs text-slate-500">
-              Especie:{' '}
+              N.º de ficha:{' '}
+              <span className="font-medium">{patient.file_number ?? patient.id}</span>
+              {' · '}
+              {LABELS_CLINICAL.species}:{' '}
               <span className="font-medium">
-                {patient.species || '—'}
+                {speciesDisplay(patient.species, patient.species_display)}
               </span>{' '}
               · Raza:{' '}
-              <span className="font-medium">
-                {patient.breed || '—'}
-              </span>{' '}
+              <span className="font-medium">{patient.breed || '—'}</span>{' '}
               · Sexo:{' '}
-              <span className="font-medium">
-                {patient.sex || '—'}
-              </span>
+              <span className="font-medium">{sexDisplay(patient.sex)}</span>
             </p>
           )}
 
           {tutor && (
             <p className="mt-1 text-xs text-slate-500">
               Tutor:{' '}
-              <span className="font-medium">
-                {tutor.name}
-              </span>
+              <span className="font-medium">{tutor.name}</span>
               {tutor.email && (
                 <>
                   {' '}
-                  ·{' '}
-                  <span className="text-slate-600">
-                    {tutor.email}
-                  </span>
+                  · <span className="text-slate-600">{tutor.email}</span>
                 </>
               )}
               {tutor.phone && (
                 <>
                   {' '}
-                  · Tel:{' '}
-                  <span className="text-slate-600">
-                    {tutor.phone}
-                  </span>
+                  · Tel: <span className="text-slate-600">{tutor.phone}</span>
+                </>
+              )}
+              {(tutor.address ?? tutor.direccion) && (tutor.address !== 'No disponible' || tutor.direccion) && (
+                <>
+                  {' '}
+                  · Dirección: <span className="text-slate-600">{tutor.address ?? tutor.direccion}</span>
                 </>
               )}
             </p>
@@ -497,10 +500,10 @@ export function ClinicalRecordDetailPage() {
                           Fecha
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-slate-500">
-                          Motivo
+                          {LABELS_CLINICAL.reason}
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-slate-500">
-                          Diagnóstico
+                          {LABELS_CLINICAL.diagnosis}
                         </th>
                         <th className="px-3 py-2 text-left font-medium text-slate-500">
                           Médico

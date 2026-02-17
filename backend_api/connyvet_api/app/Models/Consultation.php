@@ -30,6 +30,7 @@ class Consultation extends Model
         'diagnosis_primary',
         'diagnosis_secondary',
         'treatment',
+        'procedure', // opcional: procedimiento (App/mobile). Backward compatible.
         'recommendations',
 
         'weight_kg',

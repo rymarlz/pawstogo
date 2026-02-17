@@ -19,7 +19,7 @@ class ConsultationsSeeder extends Seeder
 
         $patients = Patient::orderBy('id')->get();
         foreach ($patients as $p) {
-            for ($i=0; $i<2; $i++) {
+            for ($i = 0; $i < 2; $i++) {
                 $date = Carbon::now()->subDays(10 + ($i * 7))->setTime(10 + $i, 0);
 
                 Consultation::create([
@@ -49,6 +49,34 @@ class ConsultationsSeeder extends Seeder
                     'active' => true,
                 ]);
             }
+
+            // Una cita futura por paciente (para "próximas citas" en app/dashboard)
+            Consultation::create([
+                'patient_id' => $p->id,
+                'tutor_id' => $p->tutor_id,
+                'doctor_id' => $doctor->id,
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+
+                'date' => Carbon::now()->addDays(3)->setTime(11, 0),
+                'visit_type' => 'control',
+                'reason' => 'Control programado (demo)',
+                'anamnesis' => null,
+                'physical_exam' => null,
+                'diagnosis_primary' => null,
+                'treatment' => null,
+                'recommendations' => null,
+
+                'weight_kg' => $p->weight_kg,
+                'temperature_c' => null,
+                'heart_rate' => null,
+                'respiratory_rate' => null,
+                'body_condition_score' => null,
+
+                'next_control_date' => null,
+                'status' => 'cerrada',
+                'active' => true,
+            ]);
         }
     }
 }

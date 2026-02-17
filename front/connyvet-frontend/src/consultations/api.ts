@@ -26,6 +26,7 @@ export async function fetchConsultations(
   if (filters.date_from) params.set('date_from', filters.date_from);
   if (filters.date_to) params.set('date_to', filters.date_to);
   if (filters.search) params.set('search', filters.search);
+  if (filters.upcoming) params.set('upcoming', '1');
 
   params.set('page', String(filters.page ?? 1));
   params.set('per_page', String(filters.per_page ?? 20));
