@@ -107,3 +107,11 @@ npm run dev
 ```
 
 Luego abre **http://localhost:5173** en el navegador.
+
+
+
+php artisan serve --host=0.0.0.0 --port=8000
+2) Corre Flutter apuntando al host
+Desde mobile_app/:
+
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000

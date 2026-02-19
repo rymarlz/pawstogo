@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,6 +19,11 @@ class User extends Authenticatable
 
     /**
      * Atributos asignables en masa.
+     *
+     * Nota:
+     * - El campo real en DB es `is_active`.
+     * - Se permite también `active` para compatibilidad (Flutter/web), y se mapea a `is_active`
+     *   mediante el mutador setActiveAttribute().
      */
     protected $fillable = [
         'name',
@@ -31,6 +35,7 @@ class User extends Authenticatable
         'preferences',
         'role',
         'is_active',
+        'active',   // 👈 FIX: permite mass assignment sin error (mapea a is_active)
         'phone',
     ];
 
@@ -58,8 +63,7 @@ class User extends Authenticatable
     protected function password(): Attribute
     {
         return Attribute::make(
-            set: fn (?string $value) =>
-                $value ? bcrypt($value) : null
+            set: fn (?string $value) => $value ? bcrypt($value) : null
         );
     }
 
