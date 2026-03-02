@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Patient;
+use App\Models\User;
 use App\Models\VaccineApplication;
 use App\Models\Vaccine;
 use App\Models\Tutor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
@@ -163,10 +166,14 @@ if ($status && $status !== 'all') {
 
     /**
      * POST /api/v1/vaccine-applications
+     *
+     * tutor_id se asigna automáticamente desde patient.tutor_id para que
+     * la app móvil (que filtra por tutor_id) muestre correctamente las vacunas.
      */
     public function store(Request $request)
     {
-        $userId = optional($request->user())->id;
+        $user = $request->user();
+        $userId = optional($user)->id;
 
         $validated = $request->validate([
             'patient_id' => ['required', 'integer', 'exists:patients,id'],
@@ -193,6 +200,32 @@ if ($status && $status !== 'all') {
             'attachments_meta' => ['nullable', 'array'],
             'extra_data'       => ['nullable', 'array'],
         ]);
+
+        $patient = Patient::find($validated['patient_id']);
+
+        // Seguridad por rol: si el usuario es tutor, solo puede crear para sus propios pacientes
+        if ($user && $user->role === User::ROLE_TUTOR) {
+            $tutor = Tutor::where('email', $user->email)->first();
+            if (! $tutor) {
+                return response()->json([
+                    'message' => 'Tu cuenta de tutor no está asociada a un perfil en el sistema.',
+                ], 403);
+            }
+            if ($patient->tutor_id !== $tutor->id) {
+                return response()->json([
+                    'message' => 'No puedes crear vacunas para mascotas que no te pertenecen.',
+                ], 403);
+            }
+            $validated['tutor_id'] = $tutor->id;
+        } else {
+            // Admin/doctor/asistente: asignar tutor_id desde el paciente
+            if ($patient->tutor_id) {
+                $validated['tutor_id'] = $patient->tutor_id;
+            } else {
+                Log::warning('VaccineApplication store: patient_id=' . $patient->id . ' tiene tutor_id null. La vacuna se crea con tutor_id null.');
+                $validated['tutor_id'] = null;
+            }
+        }
 
         // Lógica por defecto de estado
         if (! isset($validated['status'])) {
@@ -239,10 +272,13 @@ if ($status && $status !== 'all') {
 
     /**
      * PUT/PATCH /api/v1/vaccine-applications/{vaccineApplication}
+     *
+     * Si patient_id cambia, tutor_id se recalcula desde el nuevo paciente.
      */
     public function update(Request $request, VaccineApplication $vaccineApplication)
     {
-        $userId = optional($request->user())->id;
+        $user = $request->user();
+        $userId = optional($user)->id;
 
         $validated = $request->validate([
             'patient_id' => ['sometimes', 'required', 'integer', 'exists:patients,id'],
@@ -269,6 +305,33 @@ if ($status && $status !== 'all') {
             'attachments_meta' => ['nullable', 'array'],
             'extra_data'       => ['nullable', 'array'],
         ]);
+
+        $patientId = $validated['patient_id'] ?? $vaccineApplication->patient_id;
+        $patient = Patient::find($patientId);
+
+        // Seguridad por rol: tutor solo puede editar vacunas de sus pacientes
+        if ($user && $user->role === User::ROLE_TUTOR) {
+            $tutor = Tutor::where('email', $user->email)->first();
+            if (! $tutor) {
+                return response()->json([
+                    'message' => 'Tu cuenta de tutor no está asociada a un perfil en el sistema.',
+                ], 403);
+            }
+            if ($patient->tutor_id !== $tutor->id) {
+                return response()->json([
+                    'message' => 'No puedes editar vacunas de mascotas que no te pertenecen.',
+                ], 403);
+            }
+            $validated['tutor_id'] = $tutor->id;
+        } else {
+            // Admin/doctor/asistente: recalculamos tutor_id desde el paciente (actual o nuevo)
+            if ($patient->tutor_id) {
+                $validated['tutor_id'] = $patient->tutor_id;
+            } else {
+                Log::warning('VaccineApplication update: patient_id=' . $patient->id . ' tiene tutor_id null.');
+                $validated['tutor_id'] = null;
+            }
+        }
 
         $validated['updated_by'] = $userId;
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Patient;
+use App\Models\VaccineApplication;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -52,3 +54,32 @@ Artisan::command('db:wipe-except-tutors-patients', function () {
 
     $this->info('Listo. Solo se conservaron los datos de tutors y patients.');
 })->purpose('Vaciar todas las tablas de la BD excepto tutors y patients');
+
+/**
+ * Backfill: reparar vaccine_applications con tutor_id null.
+ * Asigna tutor_id = patient.tutor_id para cada registro afectado.
+ *
+ * Uso: php artisan vaccine-applications:backfill-tutor-id
+ */
+Artisan::command('vaccine-applications:backfill-tutor-id', function () {
+    $affected = VaccineApplication::query()
+        ->whereNull('tutor_id')
+        ->whereNotNull('patient_id')
+        ->get();
+
+    $updated = 0;
+    $skipped = 0;
+
+    foreach ($affected as $app) {
+        $patient = Patient::find($app->patient_id);
+        if (! $patient || ! $patient->tutor_id) {
+            $this->warn("  Saltado: vaccine_application id={$app->id}, patient_id={$app->patient_id} (paciente sin tutor_id)");
+            $skipped++;
+            continue;
+        }
+        $app->update(['tutor_id' => $patient->tutor_id]);
+        $updated++;
+    }
+
+    $this->info("Reparados: {$updated}. Saltados (sin tutor): {$skipped}. Total procesados: " . $affected->count());
+})->purpose('Asignar tutor_id en vaccine_applications que lo tienen null, usando patient.tutor_id');
