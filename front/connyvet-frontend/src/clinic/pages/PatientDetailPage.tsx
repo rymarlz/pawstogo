@@ -33,6 +33,20 @@ export function PatientDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  async function copyToClipboard(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // fallback si el navegador bloquea clipboard
+      const el = document.createElement('textarea');
+      el.value = text;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+  }
+
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -70,19 +84,13 @@ export function PatientDetailPage() {
   }, [token, id, navigate]);
 
   const tutorName =
-    (patient as any)?.tutor?.name ||
-    (patient as any)?.tutor_name ||
-    null;
+    (patient as any)?.tutor?.name || (patient as any)?.tutor_name || null;
 
   const tutorEmail =
-    (patient as any)?.tutor?.email ||
-    (patient as any)?.tutor_email ||
-    null;
+    (patient as any)?.tutor?.email || (patient as any)?.tutor_email || null;
 
   const tutorPhone =
-    (patient as any)?.tutor?.phone ||
-    (patient as any)?.tutor_phone ||
-    null;
+    (patient as any)?.tutor?.phone || (patient as any)?.tutor_phone || null;
 
   const tutorAddress = (patient as any)?.tutor?.address ?? null;
   const fileNumber = (patient as any)?.file_number ?? patient?.id;
@@ -130,8 +138,7 @@ export function PatientDetailPage() {
 
   const photoUrl: string | null =
     (patient as Patient & { photo_url?: string | null })?.photo_url ?? null;
-  const initial =
-    patient?.name ? patient.name.charAt(0).toUpperCase() : '?';
+  const initial = patient?.name ? patient.name.charAt(0).toUpperCase() : '?';
 
   return (
     <DashboardLayout title="Detalle del paciente">
@@ -152,62 +159,85 @@ export function PatientDetailPage() {
               </div>
             )}
           </div>
+
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
               Pacientes
             </p>
-            <h1 className="text-lg font-semibold text-slate-900">
-              {patient?.name
-                ? patient.name
-                : patient
-                ? `Paciente #${patient.id}`
-                : 'Paciente'}
+
+            {/* ✅ Nombre + badge ID copiable */}
+            <h1 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-900">
+              <span>
+                {patient?.name
+                  ? patient.name
+                  : patient
+                  ? `Paciente #${patient.id}`
+                  : 'Paciente'}
+              </span>
+
+              {patient?.id && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                  ID: {patient.id}
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(String(patient.id))}
+                    title="Copiar ID"
+                    className="ml-1 rounded-full px-1 text-slate-500 hover:text-slate-900"
+                  >
+                    ⧉
+                  </button>
+                </span>
+              )}
             </h1>
 
-          {patient && (
-            <p className="mt-1 text-xs text-slate-500">
-              N.º de ficha:{' '}
-              <span className="font-medium">{fileNumber ?? patient.id}</span>
-              {' · '}
-              {LABELS_CLINICAL.species}:{' '}
-              <span className="font-medium">
-                {speciesDisplay((patient as any).species, (patient as any).species_display)}
-              </span>{' '}
-              · Raza:{' '}
-              <span className="font-medium">
-                {(patient as any).breed || '—'}
-              </span>{' '}
-              · Sexo:{' '}
-              <span className="font-medium">
-                {sexDisplay((patient as any).sex)}
-              </span>
-            </p>
-          )}
+            {patient && (
+              <p className="mt-1 text-xs text-slate-500">
+                N.º de ficha:{' '}
+                <span className="font-medium">{fileNumber ?? patient.id}</span>
+                {' · '}
+                {LABELS_CLINICAL.species}:{' '}
+                <span className="font-medium">
+                  {speciesDisplay(
+                    (patient as any).species,
+                    (patient as any).species_display,
+                  )}
+                </span>{' '}
+                · Raza:{' '}
+                <span className="font-medium">
+                  {(patient as any).breed || '—'}
+                </span>{' '}
+                · Sexo:{' '}
+                <span className="font-medium">
+                  {sexDisplay((patient as any).sex)}
+                </span>
+              </p>
+            )}
 
-          {tutorName && (
-            <p className="mt-1 text-xs text-slate-500">
-              Tutor:{' '}
-              <span className="font-medium">{tutorName}</span>
-              {tutorEmail && (
-                <>
-                  {' '}
-                  · <span className="text-slate-600">{tutorEmail}</span>
-                </>
-              )}
-              {tutorPhone && (
-                <>
-                  {' '}
-                  · Tel: <span className="text-slate-600">{tutorPhone}</span>
-                </>
-              )}
-              {tutorAddress && tutorAddress !== 'No disponible' && (
-                <>
-                  {' '}
-                  · Dirección: <span className="text-slate-600">{tutorAddress}</span>
-                </>
-              )}
-            </p>
-          )}
+            {tutorName && (
+              <p className="mt-1 text-xs text-slate-500">
+                Tutor:{' '}
+                <span className="font-medium">{tutorName}</span>
+                {tutorEmail && (
+                  <>
+                    {' '}
+                    · <span className="text-slate-600">{tutorEmail}</span>
+                  </>
+                )}
+                {tutorPhone && (
+                  <>
+                    {' '}
+                    · Tel: <span className="text-slate-600">{tutorPhone}</span>
+                  </>
+                )}
+                {tutorAddress && tutorAddress !== 'No disponible' && (
+                  <>
+                    {' '}
+                    · Dirección:{' '}
+                    <span className="text-slate-600">{tutorAddress}</span>
+                  </>
+                )}
+              </p>
+            )}
           </div>
         </div>
 
@@ -219,6 +249,7 @@ export function PatientDetailPage() {
           >
             Volver
           </button>
+
           {patient && (
             <Link
               to={`/dashboard/pacientes/${patient.id}/editar`}
@@ -227,6 +258,7 @@ export function PatientDetailPage() {
               Editar paciente
             </Link>
           )}
+
           {patient && (
             <button
               type="button"

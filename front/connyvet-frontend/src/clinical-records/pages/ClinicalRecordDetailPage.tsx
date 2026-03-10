@@ -267,20 +267,25 @@ export function ClinicalRecordDetailPage() {
           </h1>
 
           {patient && (
-            <p className="mt-1 text-xs text-slate-500">
-              N.º de ficha:{' '}
-              <span className="font-medium">{patient.file_number ?? patient.id}</span>
-              {' · '}
-              {LABELS_CLINICAL.species}:{' '}
-              <span className="font-medium">
-                {speciesDisplay(patient.species, patient.species_display)}
-              </span>{' '}
-              · Raza:{' '}
-              <span className="font-medium">{patient.breed || '—'}</span>{' '}
-              · Sexo:{' '}
-              <span className="font-medium">{sexDisplay(patient.sex)}</span>
-            </p>
-          )}
+  <p className="mt-1 text-xs text-slate-500">
+    ID:{' '}
+    <span className="font-medium">{patient.id}</span>
+    {' · '}
+    N.º de ficha:{' '}
+    <span className="font-medium">
+      {patient.file_number ?? patient.id}
+    </span>
+    {' · '}
+    {LABELS_CLINICAL.species}:{' '}
+    <span className="font-medium">
+      {speciesDisplay(patient.species, patient.species_display)}
+    </span>{' '}
+    · Raza:{' '}
+    <span className="font-medium">{patient.breed || '—'}</span>{' '}
+    · Sexo:{' '}
+    <span className="font-medium">{sexDisplay(patient.sex)}</span>
+  </p>
+)}
 
           {tutor && (
             <p className="mt-1 text-xs text-slate-500">

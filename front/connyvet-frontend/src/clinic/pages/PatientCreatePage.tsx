@@ -15,8 +15,8 @@ interface ApiValidationErrors {
 }
 
 const SPECIES_OPTIONS: { value: Species; label: string }[] = [
-  { value: 'perro', label: 'Perro' },
-  { value: 'gato', label: 'Gato' },
+  { value: 'perro', label: 'Canino' },
+  { value: 'gato', label: 'Felino' },
   { value: 'ave', label: 'Ave' },
   { value: 'roedor', label: 'Roedor' },
   { value: 'reptil', label: 'Reptil' },
