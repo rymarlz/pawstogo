@@ -22,6 +22,11 @@ class PaymentIntent extends Model
     return $this->hasMany(PaymentTransaction::class);
   }
 
+  public function payment()
+  {
+    return $this->hasOne(Payment::class);
+  }
+
   public function patient()
   {
     return $this->belongsTo(Patient::class);

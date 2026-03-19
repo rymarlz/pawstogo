@@ -1,77 +1,23 @@
 <?php
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | CORS Paths
-    |--------------------------------------------------------------------------
-    */
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed Methods
-    |--------------------------------------------------------------------------
-    */
     'allowed_methods' => ['*'],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed Origins
-    |--------------------------------------------------------------------------
-    | Aquí dejamos explícitos los orígenes típicos:
-    | - Local Vite (5173)
-    | - Server Vite (5173)
-    |
-    | Nota: Si a veces cambias el puerto en local, abajo también dejamos
-    | un patrón para localhost/127.0.0.1 con cualquier puerto.
-    */
     'allowed_origins' => [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
-        'http://159.89.145.6:5173',
+        'https://e4af-186-104-12-121.ngrok-free.app',
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed Origins Patterns
-    |--------------------------------------------------------------------------
-    | Permite localhost con cualquier puerto (útil si Vite cambia de 5173).
-    */
-    'allowed_origins_patterns' => [
-        '/^http:\/\/localhost:\d+$/',
-        '/^http:\/\/127\.0\.0\.1:\d+$/',
-    ],
+    'allowed_origins_patterns' => [],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Allowed Headers
-    |--------------------------------------------------------------------------
-    */
     'allowed_headers' => ['*'],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Exposed Headers
-    |--------------------------------------------------------------------------
-    */
-    'exposed_headers' => ['Authorization'],
+    'exposed_headers' => [],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Max Age
-    |--------------------------------------------------------------------------
-    */
     'max_age' => 0,
 
-    /*
-    |--------------------------------------------------------------------------
-    | Supports Credentials
-    |--------------------------------------------------------------------------
-    | Si estás usando Bearer token (Authorization) y NO cookies, déjalo false.
-    | Si algún día usas Sanctum con cookies, aquí debe ser true + allowed_origins
-    | NO puede ser '*'.
-    */
-    'supports_credentials' => false,
+    'supports_credentials' => true,
 ];

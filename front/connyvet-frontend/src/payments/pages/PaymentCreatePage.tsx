@@ -1,9 +1,10 @@
 // src/payments/pages/PaymentCreatePage.tsx
+// Creación profesional de pagos con flujo explicado
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
-import { createPayment, type PaymentMethod } from '../api';
+import { createPayment } from '../api';
 import { PatientPicker, type SelectedPatient } from '../components/PatientPicker';
 
 export function PaymentCreatePage() {
@@ -18,7 +19,6 @@ export function PaymentCreatePage() {
 
   const [concept, setConcept] = useState('Atención veterinaria');
   const [amount, setAmount] = useState('0');
-  const [method, setMethod] = useState<PaymentMethod | ''>('');
   const [notes, setNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -61,19 +61,31 @@ export function PaymentCreatePage() {
         concept: conceptClean,
         amount: Math.trunc(amountInt),
         status: 'pending',
-        method: method ? method : null,
         notes: notes.trim() || null,
       });
 
-      navigate(`/dashboard/pagos/${res.data.id}`, {
-        state: { flash: { type: 'success', message: 'Pago creado correctamente.' } },
-      });
-    } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        'No se pudo crear el pago.';
-      setErrorBanner(msg);
+      const payment = res?.data ?? res;
+      const flashMessage =
+        (res as { message?: string })?.message ??
+        'Pago creado. El link de pago se envió al tutor por correo.';
+
+      if (payment?.id) {
+        navigate(`/dashboard/pagos/${payment.id}`, {
+          state: { flash: { type: 'success', message: flashMessage } },
+        });
+      } else {
+        navigate('/dashboard/pagos', {
+          state: { flash: { type: 'success', message: flashMessage } },
+        });
+      }
+    } catch (err: unknown) {
+      const e = err as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      setErrorBanner(
+        e?.response?.data?.message || e?.message || 'No se pudo crear el pago.',
+      );
     } finally {
       setSubmitting(false);
     }
@@ -81,119 +93,111 @@ export function PaymentCreatePage() {
 
   return (
     <DashboardLayout title="Nuevo pago">
-      <div className="max-w-4xl mx-auto space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-xs text-slate-500 flex flex-wrap items-center gap-1">
-            <Link to="/dashboard/pagos" className="hover:underline hover:text-slate-700">
-              Pagos
-            </Link>
-            <span>/</span>
-            <span className="text-slate-700 font-medium">Nuevo pago</span>
-          </div>
+      <div className="mx-auto max-w-2xl space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1 text-xs text-slate-500">
+          <Link to="/dashboard/pagos" className="hover:underline hover:text-slate-700">
+            Pagos
+          </Link>
+          <span>/</span>
+          <span className="font-medium text-slate-700">Nuevo pago</span>
+        </nav>
 
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-xl border border-slate-300 px-3 py-1.5 text-[11px] text-slate-700 hover:bg-slate-100"
-          >
-            Volver
-          </button>
-        </div>
+        {/* Explicación del flujo */}
+        <section className="rounded-2xl border border-sky-200 bg-sky-50/50 px-5 py-4">
+          <h2 className="text-sm font-semibold text-sky-900">
+            ¿Cómo funciona?
+          </h2>
+          <ol className="mt-2 space-y-1 text-sm text-sky-800">
+            <li>1. Selecciona el paciente y completa el monto.</li>
+            <li>2. El sistema genera un link de pago seguro de Mercado Pago.</li>
+            <li>3. Si el tutor tiene email, recibirá el link automáticamente.</li>
+            <li>4. El tutor paga con tarjeta, transferencia o cuenta Mercado Pago.</li>
+          </ol>
+        </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-          <header className="space-y-1">
-            <h2 className="text-sm font-semibold text-slate-900">Crear pago</h2>
-            <p className="text-xs text-slate-500">
-              Selecciona paciente y registra el cobro. Se crea como <b>pendiente</b>.
-              Luego lo marcas como pagado (manual) desde el detalle.
+        {/* Formulario */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <header className="mb-6">
+            <h2 className="text-lg font-bold text-slate-900">Crear pago</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              El link de Mercado Pago se enviará por correo al tutor (si tiene email configurado).
             </p>
           </header>
 
           {errorBanner && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+            <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {errorBanner}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {token && (
               <PatientPicker token={token} value={selected} onChange={setSelected} />
             )}
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-700">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">
                   Concepto <span className="text-rose-500">*</span>
                 </label>
                 <input
                   value={concept}
                   onChange={(e) => setConcept(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   placeholder="Ej: Consulta veterinaria"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-700">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700">
                   Monto (CLP) <span className="text-rose-500">*</span>
                 </label>
                 <input
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   inputMode="numeric"
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   placeholder="Ej: 15000"
                 />
+                {amountInt > 0 && (
+                  <p className="text-xs text-slate-500">
+                    Total: {new Intl.NumberFormat('es-CL', {
+                      style: 'currency',
+                      currency: 'CLP',
+                      maximumFractionDigits: 0,
+                    }).format(amountInt)}
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-700">
-                  Método (opcional)
-                </label>
-                <select
-                  value={method}
-                  onChange={(e) => setMethod(e.target.value as any)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm"
-                >
-                  <option value="">—</option>
-                  <option value="efectivo">Efectivo</option>
-                  <option value="debito">Débito</option>
-                  <option value="credito">Crédito</option>
-                  <option value="transferencia">Transferencia</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-700">
-                  Notas (opcional)
-                </label>
-                <input
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm"
-                  placeholder="Ej: N° boleta / referencia"
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">
+                Notas (opcional)
+              </label>
+              <input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900"
+                placeholder="Ej: Consulta del 15/03"
+              />
             </div>
 
-            <div className="pt-2 flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-emerald-200 hover:bg-emerald-500 disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-xl bg-[#009ee3] px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#0088c7] disabled:opacity-60"
               >
-                {submitting ? 'Creando…' : 'Crear pago'}
+                {submitting ? 'Creando…' : 'Crear pago y enviar link'}
               </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard/pagos')}
-                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+              <Link
+                to="/dashboard/pagos"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
               >
                 Cancelar
-              </button>
+              </Link>
             </div>
           </form>
         </section>

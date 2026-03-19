@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../../layouts/DashboardLayout';
 import { useAuth } from '../../../auth/AuthContext';
+import { API_BASE_URL, joinUrl } from '../../../api';
 import type { AdminUser, UserRole } from '../types';
 
 type UserRoleOption = {
@@ -16,9 +17,7 @@ const ROLE_OPTIONS: UserRoleOption[] = [
   { value: 'tutor', label: 'Tutor' },
 ];
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? '/api/v1';
-const RESOURCE_BASE = `${API_BASE_URL}/admin/users`;
+const RESOURCE_BASE = (path: string) => joinUrl(API_BASE_URL, `/admin/users${path}`);
 
 interface ApiValidationErrors {
   [key: string]: string[] | undefined;
@@ -79,7 +78,7 @@ export function AdminUserEditPage() {
         setLoadError(null);
 
         // 👈 OJO: usamos /admin/users/:id
-        const res = await fetch(`${RESOURCE_BASE}/${id}`, {
+        const res = await fetch(RESOURCE_BASE(`/${id}`), {
           headers: authHeaders(),
         });
 
@@ -140,7 +139,7 @@ export function AdminUserEditPage() {
     setFieldErrors({});
 
     try {
-      const res = await fetch(`${RESOURCE_BASE}/${id}`, {
+      const res = await fetch(RESOURCE_BASE(`/${id}`), {
         method: 'PUT',
         headers: authHeaders(),
         body: JSON.stringify({

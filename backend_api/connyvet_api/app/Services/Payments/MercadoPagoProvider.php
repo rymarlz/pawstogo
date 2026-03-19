@@ -2,6 +2,7 @@
 
 namespace App\Services\Payments;
 
+use App\Models\Payment;
 use App\Models\PaymentIntent;
 use App\Models\PaymentTransaction;
 use Illuminate\Support\Facades\Log;
@@ -57,25 +58,31 @@ class MercadoPagoProvider implements PaymentProvider
     {
         try {
             // Construir URL de retorno
-            $appUrl = config('app.url');
+            $appUrl = rtrim(config('app.url'), '/');
             $returnUrl = $context['return_url'] ?? "{$appUrl}/api/v1/payment-intents/{$intent->id}/mercadopago/callback";
             $redirectUrl = $context['redirect_url'] ?? "{$appUrl}/dashboard/pagos/{$intent->id}";
 
             // Crear preferencia en MercadoPago
             // Nota: amount_total está en centavos, MercadoPago espera decimal
             $amountDecimal = $intent->amount_total / 100;
-            
+            $currencyId = $this->mapCurrency($intent->currency);
+
+            $payer = $this->buildPayerData($intent);
+            $notificationUrl = $this->buildWebhookUrl($intent->id);
+
+            // Payload según API oficial: items, payer, back_urls, notification_url, external_reference, auto_return
+            // NO incluir metadata: no está en la API oficial de preferencias
             $preferenceData = [
                 'items' => [
                     [
                         'title' => $intent->title ?? 'Pago de consulta veterinaria',
-                        'description' => $intent->description ?? "Pago #{$intent->id}",
+                        'description' => (string) ($intent->description ?? "Pago #{$intent->id}"),
                         'quantity' => 1,
-                        'currency_id' => $this->mapCurrency($intent->currency),
+                        'currency_id' => $currencyId,
                         'unit_price' => (float) $amountDecimal,
                     ],
                 ],
-                'payer' => $this->buildPayerData($intent),
+                'payer' => $payer,
                 'back_urls' => [
                     'success' => $returnUrl . '?status=approved',
                     'failure' => $returnUrl . '?status=rejected',
@@ -83,18 +90,38 @@ class MercadoPagoProvider implements PaymentProvider
                 ],
                 'auto_return' => 'approved',
                 'external_reference' => "PI-{$intent->id}",
-                'notification_url' => $this->buildWebhookUrl($intent->id),
-                'statement_descriptor' => config('app.name', 'ConnyVet'),
-                'metadata' => [
-                    'payment_intent_id' => $intent->id,
-                    'patient_id' => $intent->patient_id,
-                    'tutor_id' => $intent->tutor_id,
-                    'consultation_id' => $intent->consultation_id,
-                ],
+                'notification_url' => $notificationUrl,
+                'statement_descriptor' => substr(config('app.name', 'ConnyVet'), 0, 13),
             ];
+
+            // En sandbox, notification_url con HTTP localhost puede ser rechazada: omitir si es local
+            if ($this->environment !== 'production' && (str_starts_with($notificationUrl, 'http://127.0.0.1') || str_starts_with($notificationUrl, 'http://localhost'))) {
+                unset($preferenceData['notification_url']);
+                Log::warning('MercadoPago: notification_url omitida en sandbox (localhost no accesible para MP)', [
+                    'payment_intent_id' => $intent->id,
+                    'url_omitida' => $notificationUrl,
+                ]);
+            }
+
+            // Log payload enviado (sin credenciales)
+            Log::info('MercadoPago: enviando preferencia', [
+                'payment_intent_id' => $intent->id,
+                'environment' => $this->environment,
+                'access_token_prefix' => substr($this->accessToken, 0, 15) . '...',
+                'payload' => $preferenceData,
+            ]);
 
             // Crear preferencia
             $preference = $this->preferenceClient->create($preferenceData);
+
+            // En sandbox/test, Mercado Pago devuelve sandbox_init_point; en producción, init_point
+            $checkoutUrl = ($this->environment === 'production')
+                ? ($preference->init_point ?? $preference->sandbox_init_point ?? null)
+                : ($preference->sandbox_init_point ?? $preference->init_point ?? null);
+
+            if (empty($checkoutUrl)) {
+                throw new \RuntimeException('MercadoPago no devolvió URL de checkout (init_point ni sandbox_init_point).');
+            }
 
             // Crear transacción en nuestra BD
             $tx = PaymentTransaction::create([
@@ -104,7 +131,7 @@ class MercadoPagoProvider implements PaymentProvider
                 'amount' => $intent->amount_total,
                 'currency' => $intent->currency,
                 'external_id' => $preference->id,
-                'redirect_url' => $preference->init_point,
+                'redirect_url' => $checkoutUrl,
                 'return_url' => $returnUrl,
                 'request_payload' => [
                     'preference_data' => $preferenceData,
@@ -114,6 +141,7 @@ class MercadoPagoProvider implements PaymentProvider
                     'preference_id' => $preference->id,
                     'init_point' => $preference->init_point,
                     'sandbox_init_point' => $preference->sandbox_init_point ?? null,
+                    'checkout_url' => $checkoutUrl,
                 ],
             ]);
 
@@ -131,18 +159,31 @@ class MercadoPagoProvider implements PaymentProvider
             return $tx;
 
         } catch (\Exception $e) {
-            // Verificar si es una excepción de MercadoPago API
             $mpExceptionClass = 'MercadoPago\Exceptions\MPApiException';
             if ($e instanceof $mpExceptionClass) {
                 $apiResponse = $e->getApiResponse();
+                $statusCode = $apiResponse?->getStatusCode() ?? 0;
+                $content = $apiResponse?->getContent();
+                $contentJson = is_array($content) ? json_encode($content, JSON_UNESCAPED_UNICODE) : (string) $content;
+
+                // Extraer mensaje real de la API (MercadoPago devuelve message, error, cause)
+                $apiMessage = $content['message'] ?? $content['error'] ?? null;
+                $apiCause = $content['cause'] ?? null;
+                $detail = $apiMessage ?? $e->getMessage();
+                if (is_array($apiCause) && !empty($apiCause)) {
+                    $detail .= ' | cause: ' . json_encode($apiCause, JSON_UNESCAPED_UNICODE);
+                }
+
                 Log::error('MercadoPago API error', [
                     'payment_intent_id' => $intent->id,
-                    'error' => $e->getMessage(),
-                    'status' => $apiResponse?->getStatusCode(),
-                    'content' => $apiResponse?->getContent(),
+                    'exception_message' => $e->getMessage(),
+                    'status_code' => $statusCode,
+                    'response_body' => $contentJson,
+                    'api_message' => $apiMessage,
+                    'api_cause' => $apiCause,
                 ]);
 
-                throw new \RuntimeException("Error al crear preferencia en MercadoPago: {$e->getMessage()}", 0, $e);
+                throw new \RuntimeException("Error al crear preferencia en MercadoPago: {$detail}", 0, $e);
             }
             Log::error('MercadoPago unexpected error', [
                 'payment_intent_id' => $intent->id,
@@ -317,6 +358,7 @@ class MercadoPagoProvider implements PaymentProvider
                     'mercadopago_payment_method' => $payment->payment_method_id,
                     'mercadopago_date_approved' => $payment->date_approved,
                 ]);
+                $this->syncPaymentFromIntent($intent);
                 break;
 
             case 'rejected':
@@ -339,13 +381,50 @@ class MercadoPagoProvider implements PaymentProvider
     }
 
     /**
-     * Construye datos del pagador desde el PaymentIntent
+     * Crea un registro en payments (caja) cuando el PaymentIntent queda pagado por Mercado Pago.
+     * Idempotente: no crea duplicado si ya existe un payment con este payment_intent_id.
+     */
+    private function syncPaymentFromIntent(PaymentIntent $intent): void
+    {
+        $intent->refresh();
+
+        if (Payment::where('payment_intent_id', $intent->id)->exists()) {
+            return;
+        }
+
+        // amount_paid en intent está en centavos; payments.amount es en unidades (pesos)
+        $amountInUnits = $intent->amount_paid > 0
+            ? round($intent->amount_paid / 100, 2)
+            : round($intent->amount_total / 100, 2);
+
+        Payment::create([
+            'patient_id'          => $intent->patient_id,
+            'tutor_id'            => $intent->tutor_id,
+            'consultation_id'     => $intent->consultation_id,
+            'payment_intent_id'   => $intent->id,
+            'concept'             => $intent->title ?? 'Pago online (Mercado Pago)',
+            'amount'              => $amountInUnits,
+            'status'              => 'paid',
+            'method'              => 'mercadopago',
+            'notes'               => null,
+            'paid_at'             => now(),
+            'created_by'          => null,
+        ]);
+
+        Log::info('Payment created from PaymentIntent', [
+            'payment_intent_id' => $intent->id,
+            'amount' => $amountInUnits,
+        ]);
+    }
+
+    /**
+     * Construye datos del pagador desde el PaymentIntent.
+     * MercadoPago rechaza phone con area_code null: solo incluir phone si es válido.
      */
     private function buildPayerData(PaymentIntent $intent): array
     {
         $payer = [];
 
-        // Cargar relaciones si no están cargadas
         if (!$intent->relationLoaded('tutor')) {
             $intent->load('tutor');
         }
@@ -353,53 +432,39 @@ class MercadoPagoProvider implements PaymentProvider
             $intent->load('patient');
         }
 
-        // Si hay tutor, usar sus datos
         if ($intent->tutor_id && $tutor = $intent->tutor) {
             $payer['name'] = $tutor->nombres ?? null;
             $payer['surname'] = $tutor->apellidos ?? null;
             $payer['email'] = $tutor->email ?? null;
-            
-            // Formatear teléfono (MercadoPago espera área código + número)
+
             $phone = $tutor->telefono_movil ?? $tutor->telefono_fijo ?? null;
             if ($phone) {
-                // Remover caracteres no numéricos
                 $phone = preg_replace('/[^0-9]/', '', $phone);
-                // Si tiene 9 dígitos, asumir código de área + número
                 if (strlen($phone) >= 9) {
                     $payer['phone'] = [
                         'area_code' => substr($phone, 0, 2),
-                        'number' => substr($phone, 2),
-                    ];
-                } else {
-                    $payer['phone'] = [
-                        'area_code' => null,
-                        'number' => $phone,
+                        'number' => (int) substr($phone, 2),
                     ];
                 }
+                // No enviar phone si area_code sería null: MercadoPago lo rechaza
             }
         } elseif ($intent->patient_id && $patient = $intent->patient) {
-            // Si no hay tutor, usar datos del paciente
             $payer['name'] = $patient->name ?? null;
             $payer['email'] = $patient->tutor_email ?? null;
-            
+
             $phone = $patient->tutor_phone ?? null;
             if ($phone) {
                 $phone = preg_replace('/[^0-9]/', '', $phone);
                 if (strlen($phone) >= 9) {
                     $payer['phone'] = [
                         'area_code' => substr($phone, 0, 2),
-                        'number' => substr($phone, 2),
-                    ];
-                } else {
-                    $payer['phone'] = [
-                        'area_code' => null,
-                        'number' => $phone,
+                        'number' => (int) substr($phone, 2),
                     ];
                 }
             }
         }
 
-        return array_filter($payer, fn($value) => $value !== null);
+        return array_filter($payer, fn ($value) => $value !== null && $value !== []);
     }
 
     /**

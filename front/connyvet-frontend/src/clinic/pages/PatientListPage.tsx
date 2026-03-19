@@ -44,8 +44,8 @@ export function PatientListPage() {
 
       const res = await fetchPatients(token, filters);
 
-      setPatients(Array.isArray(res.data) ? res.data : []);
-      setMeta(res.meta ?? null);
+      setPatients(Array.isArray(res?.data) ? res.data : []);
+      setMeta(res?.meta ?? null);
     } catch (err: any) {
       console.error('Error cargando pacientes:', err);
       setError(err?.message || 'No se pudieron cargar los pacientes.');

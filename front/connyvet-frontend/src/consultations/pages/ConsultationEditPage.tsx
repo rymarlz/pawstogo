@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
-import { apiFetch } from '../../api';
+import { apiFetch, API_BASE_URL, joinUrl } from '../../api';
 import {
   updateConsultation,
   uploadConsultationAttachments,
@@ -65,11 +65,6 @@ function normalizeExistingAttachments(c: any): any[] {
   if (Array.isArray(c?.attachments)) return c.attachments;
   if (Array.isArray(c?.files)) return c.files;
   return [];
-}
-
-// ✅ Base URL para PDFs (debe apuntar a /api/v1)
-function getApiBaseUrl() {
-  return (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api/v1').replace(/\/$/, '');
 }
 
 export function ConsultationEditPage() {
@@ -245,18 +240,17 @@ export function ConsultationEditPage() {
     }
   }
 
-  const apiBase = getApiBaseUrl();
   const rxPdfUrl =
     token && consultationId
-      ? `${apiBase}/consultations/${consultationId}/pdf/rx?token=${encodeURIComponent(token)}`
+      ? `${joinUrl(API_BASE_URL, `/consultations/${consultationId}/pdf/rx`)}?token=${encodeURIComponent(token)}`
       : '#';
   const examsPdfUrl =
     token && consultationId
-      ? `${apiBase}/consultations/${consultationId}/pdf/exams?token=${encodeURIComponent(token)}`
+      ? `${joinUrl(API_BASE_URL, `/consultations/${consultationId}/pdf/exams`)}?token=${encodeURIComponent(token)}`
       : '#';
   const clinicalPdfUrl =
     token && consultationId
-      ? `${apiBase}/consultations/${consultationId}/pdf/clinical?token=${encodeURIComponent(token)}`
+      ? `${joinUrl(API_BASE_URL, `/consultations/${consultationId}/pdf/clinical`)}?token=${encodeURIComponent(token)}`
       : '#';
 
   return (

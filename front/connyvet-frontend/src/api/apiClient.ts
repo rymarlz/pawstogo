@@ -1,10 +1,6 @@
 // src/api/apiClient.ts
 import axios from 'axios';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  '/api/v1';
+import { API_BASE_URL } from './index';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

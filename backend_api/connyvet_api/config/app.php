@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL (SPA)
+    |--------------------------------------------------------------------------
+    |
+    | URL del frontend para redirecciones (ej. callback de Mercado Pago).
+    | Debe ser la URL pública del SPA (ej. https://app.connyvet.com o
+    | http://localhost:5173 en desarrollo).
+    |
+    */
+    'frontend_url' => env('APP_FRONTEND_URL', env('APP_URL')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

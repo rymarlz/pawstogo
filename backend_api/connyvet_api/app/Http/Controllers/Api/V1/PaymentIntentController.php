@@ -14,6 +14,7 @@ class PaymentIntentController extends Controller
 {
   public function index(Request $request)
   {
+    $this->authorize('viewAny', PaymentIntent::class);
     $q = PaymentIntent::query()->latest();
 
     if ($request->filled('patient_id')) $q->where('patient_id', (int)$request->patient_id);
@@ -21,19 +22,35 @@ class PaymentIntentController extends Controller
     if ($request->filled('consultation_id')) $q->where('consultation_id', (int)$request->consultation_id);
     if ($request->filled('status')) $q->where('status', $request->status);
 
+    $perPage = (int)($request->get('per_page', 15));
+    $perPage = ($perPage > 0 && $perPage <= 100) ? $perPage : 15;
+    $paginator = $q->paginate($perPage);
+
     return response()->json([
-      'data' => $q->paginate((int)($request->get('per_page', 15))),
+      'data' => $paginator->items(),
+      'meta' => [
+        'current_page' => $paginator->currentPage(),
+        'per_page' => $paginator->perPage(),
+        'total' => $paginator->total(),
+        'last_page' => $paginator->lastPage(),
+      ],
     ]);
   }
 
   public function show(int $id)
   {
-    $intent = PaymentIntent::with('transactions')->findOrFail($id);
-    return response()->json(['data' => $intent]);
+    $intent = PaymentIntent::with(['transactions', 'payment'])->findOrFail($id);
+    $this->authorize('view', $intent);
+    $data = $intent->toArray();
+    if ($intent->payment) {
+      $data['payment_id'] = $intent->payment->id;
+    }
+    return response()->json(['data' => $data]);
   }
 
   public function store(StorePaymentIntentRequest $request)
   {
+    $this->authorize('create', PaymentIntent::class);
     $data = $request->validated();
     $data['currency'] = $data['currency'] ?? 'CLP';
     $data['provider'] = $data['provider'] ?? 'manual';
@@ -58,9 +75,13 @@ class PaymentIntentController extends Controller
   public function start(int $id, Request $request)
   {
     $intent = PaymentIntent::findOrFail($id);
+    $this->authorize('view', $intent);
 
     if ($intent->status === 'paid') {
       return response()->json(['message' => 'Este pago ya está pagado.'], 409);
+    }
+    if ($intent->status === 'cancelled') {
+      return response()->json(['message' => 'No se puede iniciar un pago cancelado.'], 409);
     }
 
     $providerName = $request->input('provider', $intent->provider ?? 'manual');
@@ -85,6 +106,7 @@ class PaymentIntentController extends Controller
   public function markManualPaid(int $id, MarkPaymentManualPaidRequest $request)
   {
     $intent = PaymentIntent::findOrFail($id);
+    $this->authorize('view', $intent);
 
     if ($intent->status === 'paid') {
       return response()->json(['message' => 'Este pago ya está pagado.'], 409);
@@ -119,6 +141,7 @@ class PaymentIntentController extends Controller
   public function cancel(int $id, Request $request)
   {
     $intent = PaymentIntent::findOrFail($id);
+    $this->authorize('view', $intent);
 
     if ($intent->status === 'paid') {
       return response()->json(['message' => 'No se puede cancelar un pago pagado.'], 409);

@@ -29,10 +29,15 @@ export function getApiErrorMessage(err: ApiError): string {
   return 'Error en la solicitud';
 }
 
+/**
+ * Base URL del backend API. Fuente única de verdad para todo el frontend.
+ * En .env: VITE_API_BASE_URL=http://127.0.0.1:8000/api/v1 (desarrollo)
+ * Fallback absoluto para evitar requests a localhost:5173.
+ */
 export const API_BASE_URL =
   (import.meta as any).env?.VITE_API_BASE_URL ??
   (import.meta as any).env?.VITE_API_URL ??
-  'http://localhost:8000/api/v1';
+  'http://127.0.0.1:8000/api/v1';
 
 export function joinUrl(base: string, path: string) {
   if (!path) return base;

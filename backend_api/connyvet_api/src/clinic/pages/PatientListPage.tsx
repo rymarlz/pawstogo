@@ -153,7 +153,7 @@ export function PatientListPage() {
           </h2>
           <p className="mt-1 max-w-xl text-xs text-slate-500">
             Administra las mascotas atendidas en la clínica: especie, raza,
-            tutor asociado y estado clínico.
+            tutor asociado y estado clínico
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">

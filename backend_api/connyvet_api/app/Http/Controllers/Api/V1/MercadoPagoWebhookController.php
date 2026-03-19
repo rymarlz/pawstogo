@@ -141,7 +141,7 @@ class MercadoPagoWebhookController extends Controller
     {
         try {
             $intent = PaymentIntent::with('transactions')->findOrFail($id);
-            $status = $request->query('status');
+            $status = $request->query('status', 'unknown');
             $paymentId = $request->query('payment_id');
             $preferenceId = $request->query('preference_id');
 
@@ -170,9 +170,9 @@ class MercadoPagoWebhookController extends Controller
                 }
             }
 
-            // Construir URL de redirección al frontend
+            // Construir URL de redirección al frontend (detalle de intención de pago)
             $frontendUrl = config('app.frontend_url', config('app.url'));
-            $redirectUrl = "{$frontendUrl}/dashboard/pagos/{$id}";
+            $redirectUrl = "{$frontendUrl}/dashboard/pagos/intento/{$id}";
 
             // Agregar parámetros de estado
             $redirectUrl .= "?status={$status}";
@@ -198,7 +198,7 @@ class MercadoPagoWebhookController extends Controller
             ]);
 
             $frontendUrl = config('app.frontend_url', config('app.url'));
-            return redirect("{$frontendUrl}/dashboard/pagos/{$id}?status=error");
+            return redirect("{$frontendUrl}/dashboard/pagos/intento/{$id}?status=error");
         }
     }
 

@@ -9,7 +9,8 @@ export type PaymentMethod =
   | 'efectivo'
   | 'debito'
   | 'credito'
-  | 'transferencia';
+  | 'transferencia'
+  | 'mercadopago';
 
 export interface Payment {
   id: number;
@@ -19,6 +20,7 @@ export interface Payment {
   consultation_id?: number | null;
   vaccine_application_id?: number | null;
   hospitalization_id?: number | null;
+  payment_intent_id?: number | null;
 
   concept: string;
   amount: number;

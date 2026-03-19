@@ -81,6 +81,20 @@ El front ya está configurado para usar la API en `http://127.0.0.1:8000/api/v1`
 
 ---
 
+## 2.1 Pagos online (Mercado Pago)
+
+Para probar el flujo de pago con Mercado Pago en local:
+
+1. **Backend** (`backend_api/connyvet_api/.env`):
+   - `APP_FRONTEND_URL=http://localhost:5173` — URL del SPA para redirigir tras el pago (callback).
+   - `MERCADOPAGO_ACCESS_TOKEN` y `MERCADOPAGO_PUBLIC_KEY` — credenciales de prueba (sandbox).
+
+2. **Flujo:** Dashboard → Pagos → "Pagar con Mercado Pago" → completar datos → redirige a checkout MP → tras pagar, vuelve a `/dashboard/pagos/intento/{id}`.
+
+3. **Webhook:** En local, Mercado Pago no puede alcanzar `localhost`. Para pruebas completas usa ngrok o similar para exponer el backend.
+
+---
+
 ## 3. Ver los cambios
 
 1. Con **backend** y **frontend** corriendo, abre en el navegador: **http://localhost:5173**

@@ -1,9 +1,5 @@
 // src/lib/api.ts
-
-// Base URL de la API Laravel (v1)
-// En .env: VITE_API_URL=/api/v1
-const API_URL =
-  import.meta.env.VITE_API_URL ?? '/api/v1';
+import { API_BASE_URL, joinUrl } from '../api';
 
 export interface ApiError {
   status: number;
@@ -32,7 +28,7 @@ async function request<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, path), {
     method,
     headers,
     body: body != null ? JSON.stringify(body) : undefined,

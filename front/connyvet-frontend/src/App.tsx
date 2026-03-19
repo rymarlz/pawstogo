@@ -60,6 +60,8 @@ import { PaymentEditPage } from './payments/pages/PaymentEditPage';
 // Agenda clínica
 import { AgendaPage } from './agenda/AgendaPage';
 import { PaymentDetailPage } from './payments/pages/PaymentDetailPage';
+import { PaymentIntentDetailPage } from './payments/pages/PaymentIntentDetailPage';
+import { PaymentOnlinePage } from './payments/pages/PaymentOnlinePage';
 import { BudgetListPage } from './budgets/pages/BudgetListPage';
 import { BudgetCreatePage } from './budgets/pages/BudgetCreatePage';
 import { BudgetDetailPage } from './budgets/pages/BudgetDetailPage';
@@ -321,6 +323,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <PaymentCreatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/pagos/online"
+            element={
+              <ProtectedRoute>
+                <PaymentOnlinePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/pagos/intento/:id"
+            element={
+              <ProtectedRoute>
+                <PaymentIntentDetailPage />
               </ProtectedRoute>
             }
           />

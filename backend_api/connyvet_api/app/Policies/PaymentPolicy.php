@@ -9,8 +9,8 @@ class PaymentPolicy
 {
     private function isCashier(User $user): bool
     {
-        $role = $user->role ?? null;
-        return in_array($role, ['admin', 'recepcion', 'vet'], true);
+        $role = strtolower(trim((string) ($user->role ?? '')));
+        return in_array($role, ['admin', 'doctor', 'asistente'], true);
     }
 
     public function viewAny(User $user): bool
@@ -43,7 +43,7 @@ class PaymentPolicy
     public function cancel(User $user, Payment $payment): bool
     {
         if ($payment->status === 'cancelled') return false;
-        $role = $user->role ?? null;
+        $role = strtolower(trim((string) ($user->role ?? '')));
         if ($payment->status === 'paid' && $role !== 'admin') return false;
         return $this->isCashier($user);
     }

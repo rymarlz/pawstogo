@@ -1,4 +1,5 @@
 // src/clinic/api.ts
+import { API_BASE_URL, joinUrl } from '../api';
 import type {
   Patient,
   PatientFilters,
@@ -9,11 +10,7 @@ import type {
 // alias de paginación específico para pacientes
 export type PaginatedPatientsResponse = PaginatedResponse<Patient>;
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? '/api/v1';
-
 // Backend: /api/v1/patients
-const PATIENTS_BASE = `${API_BASE_URL}/patients`;
 
 // ⚠️ Importante: sin Content-Type aquí, para que funcione con FormData
 function authHeaders(token: string) {
@@ -54,7 +51,7 @@ export async function fetchPatients(
 ): Promise<PaginatedPatientsResponse> {
   const qs = buildQuery(filters);
 
-  const res = await fetch(`${PATIENTS_BASE}${qs}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, `/patients${qs}`), {
     headers: authHeaders(token),
   });
 
@@ -81,7 +78,7 @@ export async function fetchPatient(
   token: string,
   id: number | string,
 ): Promise<Patient> {
-  const res = await fetch(`${PATIENTS_BASE}/${id}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, `/patients/${id}`), {
     headers: authHeaders(token),
   });
 
@@ -114,7 +111,7 @@ export async function createPatient(
 ): Promise<Patient> {
   const form = buildPatientFormData(payload, photoFile);
 
-  const res = await fetch(PATIENTS_BASE, {
+  const res = await fetch(joinUrl(API_BASE_URL, '/patients'), {
     method: 'POST',
     headers: authHeaders(token), // sin Content-Type, lo pone el navegador
     body: form,
@@ -152,7 +149,7 @@ export async function updatePatient(
 ): Promise<Patient> {
   const form = buildPatientFormData(payload, photoFile);
 
-  const res = await fetch(`${PATIENTS_BASE}/${id}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, `/patients/${id}`), {
     method: 'POST', // Laravel: para file + PUT usa override
     headers: {
       ...authHeaders(token),
@@ -189,7 +186,7 @@ export async function deletePatient(
   token: string,
   id: number | string,
 ): Promise<void> {
-  const res = await fetch(`${PATIENTS_BASE}/${id}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, `/patients/${id}`), {
     method: 'DELETE',
     headers: authHeaders(token),
   });

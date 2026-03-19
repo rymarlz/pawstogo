@@ -1,12 +1,10 @@
 // src/admin/api.ts
+import { API_BASE_URL, joinUrl } from '../api';
 import type {
   AdminUser,
   AdminUserFilters,
   PaginatedMeta,
 } from './types';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? '/api/v1';
 
 export interface PaginatedUsersResponse {
   data: AdminUser[];
@@ -39,7 +37,7 @@ export async function fetchUsers(
 ): Promise<PaginatedUsersResponse> {
   const qs = buildQuery(filters);
 
-  const res = await fetch(`${API_BASE_URL}/admin/users${qs}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, `/admin/users${qs}`), {
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: 'application/json',
@@ -63,7 +61,7 @@ export async function fetchUsers(
 }
 
 export async function deleteUser(id: number, token: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+  const res = await fetch(joinUrl(API_BASE_URL, `/admin/users/${id}`), {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${token}`,

@@ -40,15 +40,15 @@ export function AdminUserListPage() {
       // token PRIMERO, filtros después
       const res = await fetchUsers(token, filters);
 
-      setUsers(res.data);
-      setMeta(res.meta ?? null);
+      setUsers(Array.isArray(res?.data) ? res.data : []);
+      setMeta(res?.meta ?? null);
     } catch (e: any) {
       console.error('Error cargando usuarios RAW:', e);
       const msg =
-        e?.response?.data?.message ||
-        e?.message ||
+        e?.response?.data?.message ??
+        e?.message ??
         'No se pudieron cargar los usuarios.';
-      setError(msg);
+      setError(String(msg));
     } finally {
       setLoading(false);
     }

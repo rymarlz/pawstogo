@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../../layouts/DashboardLayout';
 import { useAuth } from '../../../auth/AuthContext';
+import { API_BASE_URL, joinUrl } from '../../../api';
 import type { UserRole } from '../types';
 
 type UserRoleOption = {
@@ -17,9 +18,7 @@ const ROLE_OPTIONS: UserRoleOption[] = [
   { value: 'tutor', label: 'Tutor' },
 ];
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? '/api/v1';
-const RESOURCE_BASE = `${API_BASE_URL}/admin/users`;
+const RESOURCE_BASE = () => joinUrl(API_BASE_URL, '/admin/users');
 
 interface ApiValidationErrors {
   [key: string]: string[] | undefined;
@@ -84,7 +83,7 @@ export function AdminUserCreatePage() {
     setSaveSuccess(false);
 
     try {
-      const res = await fetch(RESOURCE_BASE, {
+      const res = await fetch(RESOURCE_BASE(), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({

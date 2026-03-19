@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
+import { API_BASE_URL, joinUrl } from '../../api';
 import { fetchConsultation } from '../api';
 import type { Consultation } from '../types';
 import { LABELS_CLINICAL } from '../../lib/labels';
@@ -14,9 +15,9 @@ function formatDateTime(iso?: string | null) {
   return d.toLocaleString('es-CL');
 }
 
-function openWithToken(path: string, token: string) {
-  const sep = path.includes('?') ? '&' : '?';
-  window.open(`${path}${sep}token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
+function openWithToken(fullUrl: string, token: string) {
+  const sep = fullUrl.includes('?') ? '&' : '?';
+  window.open(`${fullUrl}${sep}token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
 }
 
 function fmtBytes(size?: number | null) {
@@ -82,17 +83,17 @@ export function ConsultationDetailPage() {
 
   function downloadPrescriptionPdf() {
     if (!token || !consultation?.id) return;
-    openWithToken(`/api/v1/consultations/${consultation.id}/pdf/prescription`, token);
+    openWithToken(joinUrl(API_BASE_URL, `/consultations/${consultation.id}/pdf/prescription`), token);
   }
 
   function downloadExamsPdf() {
     if (!token || !consultation?.id) return;
-    openWithToken(`/api/v1/consultations/${consultation.id}/pdf/exams`, token);
+    openWithToken(joinUrl(API_BASE_URL, `/consultations/${consultation.id}/pdf/exams`), token);
   }
 
   function downloadCombinedPdf() {
     if (!token || !consultation?.id) return;
-    openWithToken(`/api/v1/consultations/${consultation.id}/pdf/print`, token);
+    openWithToken(joinUrl(API_BASE_URL, `/consultations/${consultation.id}/pdf/print`), token);
   }
 
   return (
@@ -320,7 +321,7 @@ export function ConsultationDetailPage() {
                         // si no, armamos una ruta estándar (ver backend abajo)
                         const urlFallback =
                           consultation?.id && a?.id
-                            ? `/api/v1/consultations/${consultation.id}/attachments/${a.id}/download`
+                            ? joinUrl(API_BASE_URL, `/consultations/${consultation.id}/attachments/${a.id}/download`)
                             : '';
 
                         const openUrl = urlFromApi || urlFallback;

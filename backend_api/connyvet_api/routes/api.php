@@ -18,6 +18,9 @@ use App\Http\Controllers\Api\BudgetController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\V1\PaymentIntentController;
 use App\Http\Controllers\Api\V1\MercadoPagoWebhookController;
+use App\Http\Controllers\Api\V1\MercadoPagoPaymentWebhookController;
+use App\Http\Controllers\Api\V1\MercadoPagoPaymentCallbackController;
+use App\Http\Controllers\Api\TestSmtpController;
 
 // Models (para policies opcionales)
 use App\Models\Payment;
@@ -161,6 +164,11 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
             Route::apiResource('users', AdminUserController::class)->names('users');
         });
 
+        // Test SMTP (admin o usuario autenticado con permisos de pagos)
+        Route::get('test-smtp', TestSmtpController::class)
+            ->middleware('can:viewAny,' . Payment::class)
+            ->name('test_smtp');
+
         // =========================
         // PAGOS
         // =========================
@@ -174,11 +182,15 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
 
         Route::post('payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])
             ->name('payments.mark_paid')
-            ->middleware('can:update,payment');
+            ->middleware('can:markPaid,payment');
 
         Route::post('payments/{payment}/cancel', [PaymentController::class, 'cancel'])
             ->name('payments.cancel')
-            ->middleware('can:update,payment');
+            ->middleware('can:cancel,payment');
+
+        Route::post('payments/{payment}/resend-link', [PaymentController::class, 'resendLink'])
+            ->name('payments.resend_link')
+            ->middleware('can:view,payment');
 
         // Descarga adjuntos de consulta (con ?token=... igual que PDFs)
         Route::get('consultations/{consultation}/attachments/{index}/download', [ConsultationController::class, 'downloadAttachment'])
@@ -199,8 +211,12 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
         // PAYMENT INTENTS (v1)
         // =========================
         Route::prefix('payment-intents')->as('payment_intents.')->group(function () {
-            Route::get('/', [PaymentIntentController::class, 'index'])->name('index');
-            Route::post('/', [PaymentIntentController::class, 'store'])->name('store');
+            Route::get('/', [PaymentIntentController::class, 'index'])
+                ->middleware('can:viewAny,App\Models\PaymentIntent')
+                ->name('index');
+            Route::post('/', [PaymentIntentController::class, 'store'])
+                ->middleware('can:create,App\Models\PaymentIntent')
+                ->name('store');
             Route::get('/{id}', [PaymentIntentController::class, 'show'])->name('show');
             Route::post('/{id}/start', [PaymentIntentController::class, 'start'])->name('start');
             Route::post('/{id}/mark-manual-paid', [PaymentIntentController::class, 'markManualPaid'])->name('mark_manual_paid');
@@ -212,13 +228,23 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
 // =========================================================
 // WEBHOOKS Y CALLBACKS PÚBLICOS (sin autenticación)
 // =========================================================
+
+// Webhook genérico para Payment (P-{id}) y PaymentIntent (PI-{id})
+Route::post('v1/mercadopago/webhook', [MercadoPagoPaymentWebhookController::class, 'webhook'])
+    ->name('api.v1.mercadopago.webhook')
+    ->middleware('throttle:120,1');
+
+// Callback cuando el usuario retorna de MP tras pagar un Payment
+Route::get('v1/mercadopago/payment-callback', MercadoPagoPaymentCallbackController::class)
+    ->name('api.v1.mercadopago.payment_callback')
+    ->middleware('throttle:60,1');
+
 Route::prefix('v1/payment-intents')->as('api.v1.payment_intents.')->group(function () {
-    // MercadoPago webhook (POST desde MercadoPago)
+    // MercadoPago webhook legacy (PaymentIntent por ID en URL)
     Route::post('{id}/mercadopago/webhook', [MercadoPagoWebhookController::class, 'webhook'])
         ->name('mercadopago.webhook')
-        ->middleware('throttle:120,1'); // Rate limit más alto para webhooks
-    
-    // MercadoPago callback (GET cuando el usuario retorna)
+        ->middleware('throttle:120,1');
+
     Route::get('{id}/mercadopago/callback', [MercadoPagoWebhookController::class, 'callback'])
         ->name('mercadopago.callback')
         ->middleware('throttle:60,1');

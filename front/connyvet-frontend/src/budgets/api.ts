@@ -1,11 +1,10 @@
 // src/budgets/api.ts
-import { apiFetch } from '../api';
+import { apiFetch, API_BASE_URL, joinUrl } from '../api';
 
 export type BudgetStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
 
 export function budgetPdfUrl(id: number, token: string) {
-  const base = import.meta.env.VITE_API_URL ?? '/api/v1';
-  return `${base}/budgets/${id}/pdf?token=${encodeURIComponent(token)}`;
+  return `${joinUrl(API_BASE_URL, `/budgets/${id}/pdf`)}?token=${encodeURIComponent(token)}`;
 }
 
 export async function fetchBudgets(

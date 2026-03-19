@@ -1,7 +1,7 @@
 import { apiFetch } from '../api';
 
 export type PaymentStatus = 'pending' | 'paid' | 'cancelled';
-export type PaymentMethod = 'efectivo' | 'debito' | 'credito' | 'transferencia';
+export type PaymentMethod = 'efectivo' | 'debito' | 'credito' | 'transferencia' | 'mercadopago';
 
 export type Payment = {
   id: number;
@@ -12,6 +12,7 @@ export type Payment = {
   consultation_id?: number | null;
   vaccine_application_id?: number | null;
   hospitalization_id?: number | null;
+  payment_intent_id?: number | null;
 
   concept: string;
   amount: number;
@@ -19,6 +20,15 @@ export type Payment = {
 
   method: PaymentMethod | null;
   notes: string | null;
+
+  payment_link?: string | null;
+  mp_preference_id?: string | null;
+  external_reference?: string | null;
+
+  email_sent_at?: string | null;
+  email_error?: string | null;
+  mercadopago_status?: string | null;
+  mercadopago_status_detail?: string | null;
 
   paid_at?: string | null;
   cancelled_at?: string | null;
@@ -123,7 +133,14 @@ export async function createPayment(token: string, payload: CreatePaymentPayload
     notes: cleanString(payload.notes),
   };
 
-  return apiFetch<{ data: Payment }>(`/payments`, { method: 'POST', token, data: clean });
+  return apiFetch<{ data: Payment; message?: string }>(`/payments`, { method: 'POST', token, data: clean });
+}
+
+export async function resendPaymentLink(token: string, paymentId: number) {
+  return apiFetch<{ message: string; data: Payment }>(
+    `/payments/${paymentId}/resend-link`,
+    { method: 'POST', token }
+  );
 }
 
 export async function updatePayment(token: string, id: number, payload: UpdatePaymentPayload) {
