@@ -37,6 +37,8 @@ const navSections: NavSection[] = [
       // ✅ Unificar: aquí va la agenda real de consultas
       { to: '/dashboard/consultas', label: 'Agenda y consultas', icon: '🗓️' },
 
+      { to: '/dashboard/sala-espera', label: 'Sala de espera', icon: '🪑' },
+
       { to: '/dashboard/vacunas', label: 'Vacunas pendientes', icon: '💉' },
 
       // ⚠️ Solo si este módulo existe realmente:

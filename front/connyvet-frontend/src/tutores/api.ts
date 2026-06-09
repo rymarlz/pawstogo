@@ -44,7 +44,7 @@ function normalizeOne(raw: any): Tutor {
 export const tutoresApi = {
   async list(filters: TutorFilters = {}, token?: string | null): Promise<TutorListResponse> {
     const params: Record<string, any> = {};
-    if (filters.search) params.s = filters.search;
+    if (filters.search) params.search = filters.search;
     if (filters.page) params.page = filters.page;
     if (filters.per_page) params.per_page = filters.per_page;
 

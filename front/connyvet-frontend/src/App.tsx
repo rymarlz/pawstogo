@@ -17,12 +17,16 @@ import { DashboardPage } from './pages/DashboardPage';
 import { TutoresListPage } from './tutores/TutoresListPage';
 import { TutorCreatePage } from './tutores/TutorCreatePage';
 import { TutorDetailPage } from './tutores/TutorDetailPage';
+import { TutorEditPage } from './tutores/TutorEditPage';
 
 // PACIENTES
 import { PatientListPage } from './clinic/pages/PatientListPage';
 import { PatientCreatePage } from './clinic/pages/PatientCreatePage';
 import { PatientEditPage } from './clinic/pages/PatientEditPage';
 import { PatientDetailPage } from './clinic/pages/PatientDetailPage';
+
+// SALA DE ESPERA
+import { WaitingRoomPage } from './waiting-room/pages/WaitingRoomPage';
 
 // CONSULTAS
 import { ConsultationListPage } from './consultations/pages/ConsultationListPage';
@@ -114,6 +118,14 @@ function App() {
             }
           />
           <Route
+            path="/dashboard/tutores/:id/editar"
+            element={
+              <ProtectedRoute>
+                <TutorEditPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/tutores/:id"
             element={
               <ProtectedRoute>
@@ -154,6 +166,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <PatientEditPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* SALA DE ESPERA */}
+          <Route
+            path="/dashboard/sala-espera"
+            element={
+              <ProtectedRoute>
+                <WaitingRoomPage />
               </ProtectedRoute>
             }
           />

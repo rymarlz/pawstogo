@@ -129,6 +129,29 @@ export interface VaccineApplication {
   updated_at?: string;
 }
 
+export function formatVaccineApplicationPatientLabel(
+  item: Pick<VaccineApplication, 'patient_id' | 'patient'>,
+): string {
+  const name = item.patient?.name?.trim();
+  const id = item.patient?.id ?? item.patient_id;
+
+  if (name && id) return `Ficha #${id} - ${name}`;
+  if (name) return name;
+  if (id) return `Paciente #${id}`;
+  return '—';
+}
+
+export function formatVaccineApplicationVaccineLabel(
+  item: Pick<VaccineApplication, 'vaccine_id' | 'vaccine'>,
+): string {
+  const name = item.vaccine?.name?.trim();
+  const id = item.vaccine?.id ?? item.vaccine_id;
+
+  if (name) return name;
+  if (id) return `Vacuna #${id}`;
+  return '—';
+}
+
 export interface VaccineApplicationFilters {
   search?: string;
   patient_id?: number | null;

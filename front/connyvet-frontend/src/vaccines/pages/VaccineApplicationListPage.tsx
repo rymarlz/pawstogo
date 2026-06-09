@@ -7,20 +7,12 @@ import {
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { apiFetch } from '../api';
-import type { VaccineApplicationStatus } from '../types';
-
-type VaccineApplication = {
-  id: number;
-  patient_id?: number | null;
-  patient_name?: string | null;
-  vaccine_id?: number | null;
-  vaccine_name?: string | null;
-  planned_date?: string | null;
-  applied_at?: string | null;
-  next_due_date?: string | null;
-  status?: VaccineApplicationStatus;
-  active?: boolean;
-};
+import {
+  formatVaccineApplicationPatientLabel,
+  formatVaccineApplicationVaccineLabel,
+  type VaccineApplication,
+  type VaccineApplicationStatus,
+} from '../types';
 
 type Filters = {
   page: number;
@@ -466,19 +458,13 @@ export function VaccineApplicationListPage() {
                       <td className="px-3 py-2 align-top">
                         <div className="flex flex-col">
                           <span className="font-medium text-slate-800">
-                            {item.patient_name ||
-                              (item.patient_id
-                                ? `Paciente #${item.patient_id}`
-                                : '—')}
+                            {formatVaccineApplicationPatientLabel(item)}
                           </span>
                         </div>
                       </td>
                       <td className="px-3 py-2 align-top">
                         <span className="text-slate-700">
-                          {item.vaccine_name ||
-                            (item.vaccine_id
-                              ? `Vacuna #${item.vaccine_id}`
-                              : '—')}
+                          {formatVaccineApplicationVaccineLabel(item)}
                         </span>
                       </td>
                       <td className="px-3 py-2 align-top">

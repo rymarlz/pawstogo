@@ -90,7 +90,7 @@ export function TutorDetailPage() {
               type="button"
               className="btn-secondary"
               style={{ fontSize: '11px', padding: '0.4rem 0.9rem' }}
-              // onClick={() => navigate(`/dashboard/tutores/${id}/editar`)}
+              onClick={() => navigate(`/dashboard/tutores/${id}/editar`)}
             >
               Editar
             </button>

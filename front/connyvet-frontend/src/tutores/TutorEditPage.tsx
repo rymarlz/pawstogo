@@ -50,10 +50,15 @@ export function TutorEditPage() {
   async function handleSubmit(values: TutorFormValues) {
     if (!id || !token) return;
 
+    const payload = {
+      ...values,
+      fecha_nacimiento: values.fecha_nacimiento?.trim() || null,
+    };
+
     try {
       setError(null);
       setSubmitting(true);
-      const updated = await tutoresApi.update(Number(id), values, token);
+      const updated = await tutoresApi.update(Number(id), payload, token);
       navigate(`/dashboard/tutores/${updated.id}`, { replace: true });
     } catch (err: any) {
       setError(err?.message || 'No se pudieron guardar los cambios.');

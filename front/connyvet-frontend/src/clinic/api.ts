@@ -38,6 +38,10 @@ function buildQuery(filters: PatientFilters): string {
     params.set('per_page', String(filters.per_page));
   }
 
+  if (filters.tutor_id != null && String(filters.tutor_id) !== '') {
+    params.set('tutor_id', String(filters.tutor_id));
+  }
+
   const qs = params.toString();
   return qs ? `?${qs}` : '';
 }

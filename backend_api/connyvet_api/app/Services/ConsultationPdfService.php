@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Consultation;
+use App\Models\Patient;
+use App\Models\Tutor;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -69,14 +71,116 @@ class ConsultationPdfService
         return "data:{$mime};base64," . base64_encode(file_get_contents($logoPath));
     }
 
+    private function formatPdfDate(Consultation $c): string
+    {
+        return $c->date ? $c->date->format('d-m-Y') : '—';
+    }
+
+    private function formatSterilized(?bool $value): string
+    {
+        if ($value === null) {
+            return '—';
+        }
+
+        return $value ? 'Sí' : 'No';
+    }
+
+    private function formatSpecies(?Patient $patient): string
+    {
+        if (!$patient) {
+            return '—';
+        }
+
+        $display = trim((string) ($patient->species_display ?? ''));
+        if ($display !== '' && $display !== '—') {
+            return $display;
+        }
+
+        $species = trim((string) ($patient->species ?? ''));
+        if ($species === '') {
+            return '—';
+        }
+
+        return mb_convert_case($species, MB_CASE_TITLE, 'UTF-8');
+    }
+
+    private function formatPatientName(Consultation $c): string
+    {
+        $name = trim((string) ($c->patient?->name ?? ''));
+        if ($name !== '') {
+            return $name;
+        }
+
+        return $c->patient_id ? "Paciente #{$c->patient_id}" : '—';
+    }
+
+    private function formatTutorName(?Tutor $tutor): string
+    {
+        if (!$tutor) {
+            return '—';
+        }
+
+        $name = trim((string) ($tutor->name ?? ''));
+        if ($name !== '') {
+            return $name;
+        }
+
+        $nombres = trim((string) ($tutor->nombres ?? ''));
+        $apellidos = trim((string) ($tutor->apellidos ?? ''));
+        $full = trim("{$nombres} {$apellidos}");
+
+        return $full !== '' ? $full : '—';
+    }
+
+    private function formatTutorRut(?Tutor $tutor): string
+    {
+        if (!$tutor) {
+            return '—';
+        }
+
+        $rut = trim((string) ($tutor->rut ?? ''));
+        return $rut !== '' ? $rut : '—';
+    }
+
+    /**
+     * Encabezado con fecha, paciente y tutor (reutilizable en rx, exams y clinical).
+     */
+    private function buildInfoHeaderHtml(Consultation $c, string $mode): string
+    {
+        $patient = $c->patient;
+        $tutor = $c->tutor;
+        $doctorName = $c->doctor?->name ?? '—';
+
+        $breed = trim((string) ($patient?->breed ?? ''));
+        $breedDisplay = $breed !== '' ? $breed : '—';
+
+        $doctorRow = $mode === 'clinical'
+            ? '<p class="meta section-gap"><strong>Médico:</strong> ' . e($doctorName) . '</p>'
+            : '';
+
+        return '
+  <div class="info-header">
+    <p class="meta date-line"><strong>Fecha:</strong> ' . e($this->formatPdfDate($c)) . '</p>
+
+    <p class="section-title">Paciente:</p>
+    <p class="meta indent"><strong>Nombre:</strong> ' . e($this->formatPatientName($c)) . '</p>
+    <p class="meta indent"><strong>Especie:</strong> ' . e($this->formatSpecies($patient)) . '</p>
+    <p class="meta indent"><strong>Raza:</strong> ' . e($breedDisplay) . '</p>
+    <p class="meta indent"><strong>Esterilizado:</strong> ' . e($this->formatSterilized($patient?->sterilized)) . '</p>
+
+    <p class="section-title section-gap">Tutor:</p>
+    <p class="meta indent"><strong>Nombre:</strong> ' . e($this->formatTutorName($tutor)) . '</p>
+    <p class="meta indent"><strong>RUT:</strong> ' . e($this->formatTutorRut($tutor)) . '</p>
+    ' . $doctorRow . '
+  </div>';
+    }
+
     /**
      * @param  'rx'|'exams'|'clinical'  $mode
      */
     public function renderPdfHtml(Consultation $c, ?string $logoDataUri, string $mode): string
     {
-        $patientName = $c->patient?->name ?? ("Paciente #{$c->patient_id}");
-        $doctorName  = $c->doctor?->name ?? '—';
-        $dateStr = $c->date ? $c->date->format('d/m/Y H:i') : '—';
+        $infoHeaderHtml = $this->buildInfoHeaderHtml($c, $mode);
 
         $rx = $c->prescription;
         $rxItems = $rx?->items ?? collect([]);
@@ -181,7 +285,12 @@ class ConsultationPdfService
 .header-table td { vertical-align:middle; }
   .title { font-size:16px; font-weight:700; margin:0; }
   .muted { color:#64748b; }
-  .meta { margin:0; line-height:1.4; }
+  .meta { margin:0; line-height:1.5; }
+  .date-line { font-size:13px; margin-bottom:10px; }
+  .section-title { font-size:12px; font-weight:700; margin:0 0 4px; color:#0f172a; }
+  .section-gap { margin-top:10px; }
+  .indent { margin:0 0 2px 8px; }
+  .info-header { border:1px solid #e2e8f0; border-radius:8px; padding:12px; background:#f8fafc; margin-bottom:12px; }
   h2 { font-size:13px; margin:14px 0 6px; }
   .box { border:1px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc; }
   .table { width:100%; border-collapse:collapse; }
@@ -220,17 +329,13 @@ class ConsultationPdfService
 
       <td style="width:45%; text-align:right;">
         <p class="title">' . e($title) . '</p>
-        <p class="meta muted">Consulta #' . e((string)$c->id) . ' · ' . e($dateStr) . '</p>
+        <p class="meta muted">Consulta #' . e((string)$c->id) . '</p>
       </td>
     </tr>
   </table>
 </div>
 
-
-  <div class="box">
-    <p class="meta"><strong>Paciente:</strong> ' . e($patientName) . '</p>
-    <p class="meta"><strong>Médico:</strong> ' . e($doctorName) . '</p>
-  </div>
+  ' . $infoHeaderHtml . '
 
   ' . $sectionClinical . '
   ' . $sectionRx . '

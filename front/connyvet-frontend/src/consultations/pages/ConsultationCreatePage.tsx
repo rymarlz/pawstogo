@@ -1,6 +1,6 @@
 // src/consultations/pages/ConsultationCreatePage.tsx
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { createConsultation } from '../api';
@@ -21,6 +21,7 @@ function nowLocalDateTimeInput(): string {
 export function ConsultationCreatePage() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [submitting, setSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -52,6 +53,23 @@ export function ConsultationCreatePage() {
     prescription: { notes: '', items: [] },
     exam_orders: [],
   });
+
+  useEffect(() => {
+    const patientId = searchParams.get('patient_id');
+    const tutorId = searchParams.get('tutor_id');
+    const reason = searchParams.get('reason');
+    const dateParam = searchParams.get('date');
+
+    if (!patientId && !tutorId && !reason && !dateParam) return;
+
+    setValues((prev) => ({
+      ...prev,
+      patient_id: patientId ? Number(patientId) : prev.patient_id,
+      tutor_id: tutorId ? Number(tutorId) : prev.tutor_id,
+      reason: reason ?? prev.reason,
+      date: dateParam ?? prev.date,
+    }));
+  }, [searchParams]);
 
   /**
    * OJO: recibe payload listo para API (lo arma ConsultationForm)

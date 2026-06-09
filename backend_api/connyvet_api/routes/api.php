@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PatientController;
 use App\Http\Controllers\Api\ClinicalRecordController;
 use App\Http\Controllers\Api\ConsultationController;
 use App\Http\Controllers\Api\HospitalizationController;
+use App\Http\Controllers\Api\WaitingRoomEntryController;
 use App\Http\Controllers\Api\VaccineController;
 use App\Http\Controllers\Api\VaccineApplicationController;
 use App\Http\Controllers\Api\PaymentController;
@@ -139,6 +140,20 @@ Route::prefix('v1')->as('api.v1.')->group(function () {
         Route::apiResource('hospitalizations', HospitalizationController::class)
             ->parameters(['hospitalizations' => 'hospitalization'])
             ->names('hospitalizations');
+
+        // =========================
+        // Sala de espera
+        // =========================
+        Route::patch('waiting-room-entries/{waitingRoomEntry}/start', [WaitingRoomEntryController::class, 'start'])
+            ->name('waiting_room_entries.start');
+        Route::patch('waiting-room-entries/{waitingRoomEntry}/attend', [WaitingRoomEntryController::class, 'attend'])
+            ->name('waiting_room_entries.attend');
+        Route::patch('waiting-room-entries/{waitingRoomEntry}/cancel', [WaitingRoomEntryController::class, 'cancel'])
+            ->name('waiting_room_entries.cancel');
+
+        Route::apiResource('waiting-room-entries', WaitingRoomEntryController::class)
+            ->parameters(['waiting-room-entries' => 'waitingRoomEntry'])
+            ->names('waiting_room_entries');
 
         // =========================
         // Vacunas (catálogo)
