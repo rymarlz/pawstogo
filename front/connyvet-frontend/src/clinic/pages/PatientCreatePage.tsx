@@ -1,6 +1,6 @@
 // src/clinic/pages/PatientCreatePage.tsx
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '../../layouts/DashboardLayout';
 import { useAuth } from '../../auth/AuthContext';
 import { createPatient } from '../api';
@@ -31,6 +31,7 @@ const SEX_OPTIONS: { value: Sex; label: string }[] = [
 
 export function PatientCreatePage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { token } = useAuth();
 
   const [form, setForm] = useState<{
@@ -82,6 +83,40 @@ export function PatientCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const tutorIdParam = searchParams.get('tutor_id');
+    if (!tutorIdParam || !token) return;
+
+    const tutorId = Number(tutorIdParam);
+    if (Number.isNaN(tutorId)) return;
+
+    let active = true;
+
+    tutoresApi
+      .get(tutorId, token)
+      .then((tutor) => {
+        if (!active) return;
+        const nombreCompleto = [tutor.nombres, tutor.apellidos]
+          .filter(Boolean)
+          .join(' ');
+        setForm((prev) => ({
+          ...prev,
+          tutor_id: String(tutor.id),
+          tutor_name: nombreCompleto || prev.tutor_name,
+          tutor_email: tutor.email || prev.tutor_email,
+          tutor_phone:
+            tutor.telefono_movil || tutor.telefono_fijo || prev.tutor_phone,
+        }));
+      })
+      .catch(() => {
+        // Si falla, el usuario puede buscar el tutor manualmente
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [searchParams, token]);
 
   function handleChange<K extends keyof typeof form>(
     key: K,
